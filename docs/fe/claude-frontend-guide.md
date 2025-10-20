@@ -121,41 +121,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
 #### 2.3 AJAX 응답 표준화
 ```javascript
-// ❌ Bad - 일관성 없는 응답 처리
-function saveUser(userData) {
-  fetch('/api/users', {...})
-    .then(res => res.json())
-    .then(data => {
-      if(data) location.reload(); // 어떤 데이터?
-    });
-}
-
-// ✅ Good - 표준화된 응답 처리 (ApiResponse 형식)
-function saveUser(userData) {
-  fetch('http://localhost:8080/users', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-    },
-    body: JSON.stringify(userData)
-  })
-  .then(res => res.json())
-  .then(response => {
-    // { message: "success_code", data: {...}, timestamp: "..." }
-    if (response.message.includes('success')) {
-      showSuccess('저장되었습니다.');
-      updateUserList(response.data);
-    } else {
-      showError(translateErrorCode(response.message));
-    }
-  })
-  .catch(error => {
-    console.error('API Error:', error);
-    showError('서버 오류가 발생했습니다.');
-  });
-}
+// ✅ Good - 표준화된 응답 처리
+fetch('http://localhost:8080/users', {
+  method: 'POST',
+  credentials: 'include',  // HttpOnly Cookie 자동 전송
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(userData)
+})
+.then(res => res.json())
+.then(response => {
+  // { message: "success_code", data: {...}, timestamp: "..." }
+  if (response.message.includes('success')) {
+    updateUserList(response.data);
+  } else {
+    showError(translateErrorCode(response.message));
+  }
+});
 ```
+
+**참조**: `origin_source/static/js/common/api.js` (fetchWithAuth 구현)
 
 ---
 
@@ -226,12 +210,9 @@ const PageConfig = {
 ```javascript
 // common/utils.js - 공통 유틸리티
 const CommonUtils = {
-  // 날짜 포맷
+  // 날짜 포맷 (상대 시간)
   formatDate(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = Math.floor((now - date) / 1000);
-
+    const diff = Math.floor((new Date() - new Date(dateString)) / 1000);
     if (diff < 60) return '방금 전';
     if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
     // ...
@@ -239,25 +220,19 @@ const CommonUtils = {
 
   // XSS 방지
   escapeHtml(str) {
-    if (!str || typeof str !== 'string') return '';
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
   },
 
-  // 공통 AJAX 래퍼 (JWT 토큰 자동 포함)
+  // HttpOnly Cookie 자동 전송
   async fetchWithAuth(url, options = {}) {
-    const token = localStorage.getItem('access_token');
-    const defaultOptions = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
-      }
-    };
-    return fetch(url, {...defaultOptions, ...options});
+    return fetch(url, { credentials: 'include', ...options });
   }
 };
 ```
+
+**참조**: `origin_source/static/js/common/utils.js` (전체 구현)
 
 ---
 
@@ -334,77 +309,27 @@ ktb_community_fe/
 
 ### JavaScript 파일 구조 템플릿
 ```javascript
-// pages/user/list.js
+// pages/user/list.js - IIFE 패턴
 (function(window, document) {
   'use strict';
 
-  // 설정
-  const CONFIG = {
-    API_URL: 'http://localhost:8080/users',
-    PAGE_SIZE: 20
-  };
+  const CONFIG = { API_URL: '...', PAGE_SIZE: 20 };
+  const state = { currentPage: 1, users: [] };
+  const elements = {};  // DOM 캐싱
 
-  // 상태 관리
-  const state = {
-    currentPage: 1,
-    users: []
-  };
-
-  // DOM 요소 캐싱
-  const elements = {
-    userList: null,
-    pagination: null,
-    searchInput: null
-  };
-
-  // 초기화
   function init() {
-    cacheElements();
-    bindEvents();
-    loadUsers();
-  }
-
-  // DOM 요소 캐싱
-  function cacheElements() {
-    elements.userList = document.querySelector('[data-user-list]');
-    elements.pagination = document.querySelector('[data-pagination]');
-    elements.searchInput = document.querySelector('[data-search]');
-  }
-
-  // 이벤트 바인딩
-  function bindEvents() {
-    elements.searchInput?.addEventListener('input', debounce(handleSearch, 300));
-    document.addEventListener('click', handleGlobalClick);
-  }
-
-  // 전역 클릭 핸들러 (이벤트 위임)
-  function handleGlobalClick(e) {
-    if (e.target.matches('[data-action="delete"]')) {
-      handleDelete(e.target.dataset.id);
-    }
-  }
-
-  // 사용자 목록 로드
-  async function loadUsers() {
-    try {
-      const response = await fetchWithAuth(`${CONFIG.API_URL}?page=${state.currentPage}`);
-      const data = await response.json();
-      renderUsers(data.data.users);
-    } catch (error) {
-      console.error('Failed to load users:', error);
-      showError('사용자 목록을 불러오는데 실패했습니다.');
-    }
+    cacheElements();  // DOM 요소 캐싱
+    bindEvents();     // 이벤트 위임
+    loadData();       // 초기 데이터
   }
 
   // DOMContentLoaded
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  document.addEventListener('DOMContentLoaded', init);
 
 })(window, document);
 ```
+
+**참조**: `origin_source/static/js/pages/` (실제 구현 예시)
 
 ---
 

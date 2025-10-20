@@ -1,6 +1,6 @@
 # 프론트엔드 연동 가이드
 
-**버전**: 2.0
+**버전**: 3.0
 **프론트엔드 서버**: Express.js (정적 파일 서빙)
 **백엔드 API**: `http://localhost:8080` (Spring Boot)
 **상세 API 스펙**: [API.md](../be/API.md) 참조
@@ -40,11 +40,14 @@ npm start
 
 ### 1.2 API 호출 예시
 
+⚠️ **변경사항**: localStorage → HttpOnly Cookie 전환 완료 (2025-10-20)
+
 ```javascript
 // 로그인
 const response = await fetch('http://localhost:8080/auth/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',  // ✅ Cookie 수신
   body: JSON.stringify({
     email: 'test@example.com',
     password: 'Test1234!'
@@ -52,27 +55,24 @@ const response = await fetch('http://localhost:8080/auth/login', {
 });
 
 const data = await response.json();
-// { message: "login_success", data: { access_token, refresh_token }, timestamp }
-
-// 토큰 저장
-localStorage.setItem('access_token', data.data.access_token);
-localStorage.setItem('refresh_token', data.data.refresh_token);
+// { message: "login_success", data: { userId, email, nickname }, timestamp }
+// 서버가 access_token, refresh_token Cookie 자동 설정
 
 // 인증 API 호출
 const posts = await fetch('http://localhost:8080/posts', {
-  headers: {
-    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-  }
+  credentials: 'include'  // ✅ Cookie 자동 전송
 });
 ```
 
+**참조**: [PLAN.md Phase 3 - HttpOnly Cookie 전환 가이드](./PLAN.md#phase-3-jwt-httponly-cookie-전환)
+
 ### 1.3 공통 헤더
 
-| 상황 | Content-Type | Authorization |
-|------|--------------|---------------|
+| 상황 | Content-Type | credentials |
+|------|--------------|-------------|
 | JSON 요청 | application/json | - |
-| 인증 필요 | application/json | Bearer {token} |
-| 파일 업로드 | multipart/form-data | Bearer {token} |
+| 인증 필요 | application/json | 'include' (Cookie 전송) |
+| 파일 업로드 | multipart/form-data | 'include' (Cookie 전송) |
 
 ### 1.4 응답 구조
 
@@ -85,29 +85,36 @@ const posts = await fetch('http://localhost:8080/posts', {
 
 ## 2. 인증 시스템
 
-### 2.1 토큰 관리
+⚠️ **변경사항**: localStorage → HttpOnly Cookie 전환 완료 (백엔드 2025-10-20)
 
-**토큰 종류**:
-- **Access Token**: 30분, API 요청 시 사용
-- **Refresh Token**: 7일, Access Token 갱신용
+### 2.1 HttpOnly Cookie 방식
 
-**발급 시점**: 회원가입(`POST /users/signup`), 로그인(`POST /auth/login`)
+**백엔드 변경**:
+- 서버가 로그인/회원가입 시 HttpOnly Cookie 설정 (access_token, refresh_token)
+- Cookie 속성: `HttpOnly=true`, `Secure=true` (운영), `SameSite=Lax`
+- JavaScript에서 토큰 접근 불가 → XSS 공격 방어
+
+**프론트엔드 변경**:
+- localStorage 저장/조회 로직 삭제
+- 모든 API 호출에 `credentials: 'include'` 추가
+- Authorization 헤더 제거 (Cookie 자동 전송)
+
+**참조**: [PLAN.md Phase 3](./PLAN.md#phase-3-jwt-httponly-cookie-전환) (상세 구현 가이드)
 
 ### 2.2 토큰 갱신 자동화
 
-`origin_source/static/js/common/api.js`에 구현된 `fetchWithAuth()` 사용:
+`origin_source/static/js/common/api.js`에 구현된 `fetchWithAuth()` 수정 필요:
 
 ```javascript
-// origin_source/static/js/common/api.js에서
+// origin_source/static/js/common/api.js
 async function fetchWithAuth(url, options = {}) {
-  const token = localStorage.getItem('access_token');
-
   const config = {
     ...options,
+    credentials: 'include',  // ✅ Cookie 자동 전송
     headers: {
       'Content-Type': 'application/json',
-      ...options.headers,
-      ...(token && { Authorization: `Bearer ${token}` })
+      ...options.headers
+      // Authorization 헤더 제거
     }
   };
 
@@ -118,14 +125,10 @@ async function fetchWithAuth(url, options = {}) {
     if (response.status === 401) {
       const refreshed = await refreshAccessToken();
       if (refreshed) {
-        // 재시도
-        const newToken = localStorage.getItem('access_token');
-        config.headers.Authorization = `Bearer ${newToken}`;
-        const retryResponse = await fetch(`${API_BASE_URL}${url}`, config);
-        return handleResponse(retryResponse);
+        // 재시도 (Cookie는 자동 전송됨)
+        return fetch(`${API_BASE_URL}${url}`, config);
       } else {
         // 갱신 실패 → 로그인 페이지로
-        logout();
         window.location.href = '/pages/user/login.html';
         throw new Error('Authentication failed');
       }
@@ -135,6 +138,25 @@ async function fetchWithAuth(url, options = {}) {
   } catch (error) {
     console.error('API Error:', error);
     throw error;
+  }
+}
+
+// 토큰 갱신 (POST /auth/refresh_token)
+async function refreshAccessToken() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh_token`, {
+      method: 'POST',
+      credentials: 'include'  // refresh_token Cookie 전송
+    });
+
+    if (response.ok) {
+      // 서버가 새 access_token Cookie 설정
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+    return false;
   }
 }
 ```
@@ -164,78 +186,34 @@ async function fetchWithAuth(url, options = {}) {
 
 **엔드포인트**: `GET /posts?sort=latest&limit=10&cursor={cursor}`
 
-**Vanilla JS 구현 예시**:
-```javascript
-// origin_source/static/js/pages/board/list.js
-(function() {
-  let cursor = null;
-  let hasMore = true;
+**응답 구조**: `{ posts[], nextCursor, hasMore }`
 
-  async function loadMore() {
-    if (!hasMore) return;
+**핵심 패턴**:
+- 첫 페이지: cursor 생략 (`GET /posts?sort=latest&limit=10`)
+- 다음 페이지: 응답의 `nextCursor` 사용 (`GET /posts?cursor=123&limit=10`)
+- 종료 조건: `nextCursor=null` 또는 `hasMore=false`
+- limit+1 패턴: 서버가 11개 조회 → 10개 반환 + hasMore 판단
 
-    const url = cursor
-      ? `http://localhost:8080/posts?sort=latest&limit=10&cursor=${cursor}`
-      : 'http://localhost:8080/posts?sort=latest&limit=10';
-
-    const response = await fetch(url);
-    const data = await response.json();
-
-    renderPosts(data.data.posts); // 기존 목록에 추가
-    cursor = data.data.nextCursor;
-    hasMore = data.data.hasMore;
-
-    // 더보기 버튼 업데이트
-    document.querySelector('[data-load-more]').style.display =
-      hasMore ? 'block' : 'none';
-  }
-
-  // 더보기 버튼 클릭
-  document.querySelector('[data-load-more]')?.addEventListener('click', loadMore);
-
-  // 초기 로드
-  loadMore();
-})();
-```
-
-**핵심**: `nextCursor=null` 또는 `hasMore=false`면 마지막 페이지
+**참조**:
+- **샘플 코드**: `origin_source/static/js/pages/board/list.js` (전체 구현)
+- **응답 구조**: [API.md Section 3.1](../be/API.md#31-게시글-목록-조회)
+- **서버 로직**: [LLD.md Section 7.3](../be/LLD.md#73-페이지네이션)
 
 ### 3.3 Offset 기반 (페이지 번호)
 
 **엔드포인트**: `GET /posts?sort=likes&offset=0&limit=10`
 
-**Vanilla JS 구현 예시**:
-```javascript
-let currentPage = 1;
-const limit = 10;
+**응답 구조**: `{ posts[], pagination: { total_count } }`
 
-async function loadPage(page) {
-  const offset = (page - 1) * limit;
-  const response = await fetch(
-    `http://localhost:8080/posts?sort=likes&offset=${offset}&limit=${limit}`
-  );
-  const data = await response.json();
+**핵심 패턴**:
+- offset 계산: `(page - 1) * limit` (예: 2페이지 = offset 10)
+- 페이지 수: `Math.ceil(total_count / limit)`
+- 페이지 번호 네비게이션 렌더링
 
-  renderPosts(data.data.posts);
-  renderPagination(data.data.pagination.total_count, page, limit);
-}
-
-function renderPagination(totalCount, currentPage, limit) {
-  const totalPages = Math.ceil(totalCount / limit);
-  const pagination = document.querySelector('[data-pagination]');
-
-  pagination.innerHTML = '';
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement('button');
-    btn.textContent = i;
-    btn.className = i === currentPage ? 'active' : '';
-    btn.addEventListener('click', () => loadPage(i));
-    pagination.appendChild(btn);
-  }
-}
-```
-
-**핵심**: `total_count` 제공으로 페이지 번호 계산 가능
+**참조**:
+- **샘플 코드**: `origin_source/static/js/pages/board/list.js` (전체 구현)
+- **응답 구조**: [API.md Section 3.1](../be/API.md#31-게시글-목록-조회)
+- **적용 대상**: 좋아요순 게시글, 댓글 목록, 좋아요한 게시글 (추후 cursor 전환 예정)
 
 ---
 
@@ -254,57 +232,36 @@ const formData = new FormData();
 formData.append('email', 'test@example.com');
 formData.append('password', 'Test1234!');
 formData.append('nickname', '테스트유저');
-
-// 프로필 이미지 (선택)
-const fileInput = document.querySelector('[data-profile-image]');
-if (fileInput.files[0]) {
-  formData.append('profileImage', fileInput.files[0]);
-}
+formData.append('profileImage', fileInput.files[0]);  // 선택
 
 const response = await fetch('http://localhost:8080/users/signup', {
   method: 'POST',
   body: formData  // Content-Type 자동 설정
 });
-
-// 에러 처리
-if (!response.ok) {
-  const error = await response.json();
-
-  if (error.message === 'IMAGE-002') {
-    alert('파일 크기는 5MB 이하여야 합니다.');
-  } else if (error.message === 'IMAGE-003') {
-    alert('JPG, PNG, GIF 파일만 업로드 가능합니다.');
-  }
-}
 ```
+
+**에러 처리**: IMAGE-002 (파일 크기 초과), IMAGE-003 (파일 형식 오류) → [API.md](../be/API.md#image-에러-코드) 참조
 
 ### 4.3 이미지 단독 업로드 (게시글용)
 
 ```javascript
 // 1단계: 이미지 업로드
 const formData = new FormData();
-const fileInput = document.querySelector('[data-post-image]');
 formData.append('file', fileInput.files[0]);
-
 const imageResponse = await fetchWithAuth('http://localhost:8080/images', {
   method: 'POST',
   body: formData
 });
+const { imageId } = (await imageResponse.json()).data;
 
-const imageData = await imageResponse.json();
-const { imageId, imageUrl } = imageData.data;
-
-// 2단계: 게시글 작성 시 imageId 사용
-const postResponse = await fetchWithAuth('http://localhost:8080/posts', {
+// 2단계: 게시글 작성
+await fetchWithAuth('http://localhost:8080/posts', {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    title: '게시글 제목',
-    content: '게시글 내용',
-    imageId: imageId  // 업로드된 이미지 ID
-  })
+  body: JSON.stringify({ title, content, imageId })
 });
 ```
+
+**참조**: [LLD.md Section 7.5](../be/LLD.md#75-이미지-업로드-전략) (TTL 패턴 상세)
 
 ---
 
@@ -331,43 +288,21 @@ function validatePassword(password) {
 }
 ```
 
-### 5.3 프론트엔드 검증 함수
+### 5.3 프론트엔드 검증 (예시)
 
 ```javascript
-function validateSignupForm(formData) {
-  const errors = {};
+// 이메일
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  // 이메일
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(formData.email)) {
-    errors.email = '유효한 이메일 주소를 입력하세요.';
-  }
+// 비밀번호 (8-20자, 대/소/특수문자)
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])\.{8,20}$/;
 
-  // 비밀번호
-  const passwordError = validatePassword(formData.password);
-  if (passwordError) errors.password = passwordError;
-
-  // 닉네임
-  if (formData.nickname.length > 10) {
-    errors.nickname = '닉네임은 최대 10자입니다.';
-  }
-
-  // 파일
-  if (formData.profileImage) {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!allowedTypes.includes(formData.profileImage.type)) {
-      errors.profileImage = 'JPG, PNG, GIF 파일만 가능합니다.';
-    }
-
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (formData.profileImage.size > maxSize) {
-      errors.profileImage = '파일 크기는 5MB 이하여야 합니다.';
-    }
-  }
-
-  return Object.keys(errors).length > 0 ? errors : null;
-}
+// 파일 (JPG/PNG/GIF, 5MB)
+const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+const maxSize = 5 * 1024 * 1024;
 ```
+
+**참조**: `origin_source/static/js/common/validation.js` (전체 구현)
 
 ---
 
@@ -382,71 +317,44 @@ function validateSignupForm(formData) {
 
 ### 6.2 에러 핸들러 구현
 
-`origin_source/static/js/common/api.js`의 `translateErrorCode()` 사용:
-
 ```javascript
-async function handleApiRequest(url, options) {
-  try {
-    const response = await fetch(url, options);
-    const data = await response.json();
+const response = await fetch(url, options);
+const data = await response.json();
 
-    if (!response.ok) {
-      const errorMessage = translateErrorCode(data.message);
-      showError(errorMessage);
-      throw new Error(data.message);
-    }
-
-    return data;
-  } catch (error) {
-    console.error('API 요청 실패:', error);
-    throw error;
-  }
+if (!response.ok) {
+  showError(translateErrorCode(data.message));  // API-001 → "잘못된 요청입니다"
+  throw new Error(data.message);
 }
 ```
+
+**참조**: `origin_source/static/js/common/api.js::translateErrorCode()` (전체 28개 에러 코드 매핑)
 
 ### 6.3 Rate Limit (429) 재시도
 
 ```javascript
-async function fetchWithRetry(url, options, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
-    const response = await fetch(url, options);
-
-    if (response.status === 429) {
-      const delay = Math.pow(2, i) * 1000; // 1초, 2초, 4초
-      console.log(`Rate limited. Retrying in ${delay}ms...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      continue;
-    }
-
-    return response;
-  }
+// 지수 백오프 패턴
+if (response.status === 429) {
+  const delay = Math.pow(2, retryCount) * 1000;  // 1초, 2초, 4초
+  await new Promise(resolve => setTimeout(resolve, delay));
 }
 ```
+
+**참조**: [LLD.md Section 6.5 - Rate Limiting](../be/LLD.md#65-rate-limiting) (Tier 전략 상세)
 
 ---
 
 ## 7. 개발 팁
 
-### 7.1 JWT 디코딩
+### 7.1 토큰 관리
 
-```javascript
-// Access Token 디코딩 (만료 시간 확인)
-function parseJwt(token) {
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(
-    atob(base64)
-      .split('')
-      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-      .join('')
-  );
-  return JSON.parse(jsonPayload);
-}
+**HttpOnly Cookie 사용**: JavaScript에서 토큰 직접 접근 불가 (XSS 방지)
 
-const token = localStorage.getItem('access_token');
-const payload = parseJwt(token);
-console.log('Token expires at:', new Date(payload.exp * 1000));
-```
+**토큰 확인 방법**:
+- 브라우저 개발자도구 → Application → Cookies → `http://localhost:8080`
+- `access_token`, `refresh_token` Cookie 존재 확인
+- Attributes: `HttpOnly`, `SameSite=Lax`, `Secure` (production)
+
+**토큰 만료 확인**: 401 에러 발생 시 자동 갱신 (fetchWithAuth에서 처리)
 
 ### 7.2 개발 체크리스트
 
@@ -461,30 +369,27 @@ console.log('Token expires at:', new Date(payload.exp * 1000));
 - [ ] 무한 스크롤 vs 페이지 번호 UI 결정
 
 #### 인증 구현 전
-- [ ] Access Token localStorage 저장
+- [ ] HttpOnly Cookie 설정 확인 (서버 응답)
+- [ ] credentials: 'include' 설정 (모든 인증 요청)
 - [ ] 토큰 갱신 로직 구현 (fetchWithAuth)
 - [ ] 401 에러 시 재로그인 플로우
 
 ### 7.3 브라우저 콘솔 테스트
 
 ```javascript
-// 로그인 테스트
-const response = await fetch('http://localhost:8080/auth/login', {
+// 로그인
+await fetch('http://localhost:8080/auth/login', {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    email: 'test@startupcode.kr',
-    password: 'test1234'
-  })
+  credentials: 'include',  // ✅ Cookie 수신
+  body: JSON.stringify({ email: 'test@startupcode.kr', password: 'test1234' })
 });
-const data = await response.json();
 
-// 토큰 저장
-localStorage.setItem('access_token', data.data.access_token);
-localStorage.setItem('refresh_token', data.data.refresh_token);
+// 토큰 확인: Application → Cookies → localhost:8080 → access_token/refresh_token
 
-// 인증 API 테스트
-const posts = await fetchWithAuth('http://localhost:8080/posts');
+// 인증 API 호출
+const posts = await fetch('http://localhost:8080/posts', {
+  credentials: 'include'  // ✅ Cookie 자동 전송
+}).then(r => r.json());
 ```
 
 ---
@@ -526,4 +431,6 @@ A5. `PORT=8000 npm start` 또는 `.env` 파일 수정
 |------|------|-----------|
 | 2025-10-16 | 1.0 | 프론트엔드 연동 가이드 작성 (간소화) |
 | 2025-10-20 | 2.0 | Express.js 정적 파일 서버로 업데이트 (Vanilla JS) |
+| 2025-10-20 | 3.1 | 코드 예제 간소화 (482줄 → 435줄, 10% 감소) - 핵심 스니펫만 유지 |
 | 2025-10-20 | 2.1 | 중복 제거 (API.md/LLD.md 참조 방식) - 40-55% → <20% |
+| 2025-10-20 | 3.0 | HttpOnly Cookie 전환 완료 (localStorage → credentials: 'include'), 페이지네이션 코드 중복 제거 (70줄 → 32줄) |
