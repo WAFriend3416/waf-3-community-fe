@@ -82,6 +82,8 @@
               class="input-field__input"
               placeholder="이메일을 입력해주세요"
               data-field="email"
+              maxlength="320"
+              autocomplete="email"
               required
             >
             <span class="input-field__helper" data-helper="email">* 이메일을 입력해주세요</span>
@@ -92,22 +94,35 @@
           <!-- Password Field -->
           <div class="input-field">
             <label for="password" class="input-field__label">비밀번호*</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              class="input-field__input"
-              placeholder="비밀번호를 입력해주세요"
-              data-field="password"
-              required
-            >
+            <div class="input-field__wrapper">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                class="input-field__input"
+                placeholder="비밀번호를 입력해주세요"
+                data-field="password"
+                maxlength="20"
+                autocomplete="new-password"
+                required
+              >
+              <button
+                type="button"
+                class="password-toggle"
+                data-action="toggle-password"
+                aria-label="비밀번호 표시"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
             <span class="input-field__helper" data-helper="password">* 8-20자, 영문, 숫자, 특수문자 포함</span>
             <span class="input-field__error" data-error="password"></span>
             <!-- Password Strength Indicator -->
-            <div class="password-strength" data-strength="indicator" style="display: none;">
-              <div class="password-strength__bar">
-                <div class="password-strength__fill" data-strength="fill"></div>
-              </div>
+            <div class="password-strength">
+              <div class="password-strength__bar" data-strength="bar"></div>
               <span class="password-strength__text" data-strength="text"></span>
             </div>
           </div>
@@ -115,15 +130,30 @@
           <!-- Password Confirmation Field -->
           <div class="input-field">
             <label for="password-confirm" class="input-field__label">비밀번호 확인*</label>
-            <input
-              type="password"
-              id="password-confirm"
-              name="passwordConfirm"
-              class="input-field__input"
-              placeholder="비밀번호를 한번 더 입력해주세요"
-              data-field="passwordConfirm"
-              required
-            >
+            <div class="input-field__wrapper">
+              <input
+                type="password"
+                id="password-confirm"
+                name="passwordConfirm"
+                class="input-field__input"
+                placeholder="비밀번호를 한번 더 입력해주세요"
+                data-field="passwordConfirm"
+                maxlength="20"
+                autocomplete="new-password"
+                required
+              >
+              <button
+                type="button"
+                class="password-toggle"
+                data-action="toggle-password-confirm"
+                aria-label="비밀번호 표시"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
             <span class="input-field__helper" data-helper="passwordConfirm">* 비밀번호를 다시 입력해주세요</span>
             <span class="input-field__success" data-success="passwordConfirm"></span>
             <span class="input-field__error" data-error="passwordConfirm"></span>
@@ -140,6 +170,7 @@
               placeholder="닉네임을 입력해주세요"
               data-field="nickname"
               maxlength="10"
+              autocomplete="username"
               required
             >
             <span class="input-field__helper" data-helper="nickname">* 2-10자 이내로 입력해주세요</span>

@@ -228,3 +228,101 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
 }
+
+/* Password Input with Toggle */
+.input-field__wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-field__wrapper .input-field__input {
+  flex: 1;
+  padding-right: 48px; /* Space for toggle button */
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+
+.password-toggle:hover {
+  color: var(--color-text-secondary);
+}
+
+.password-toggle:active {
+  color: var(--color-text-primary);
+}
+
+.password-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Password Strength Indicator */
+.password-strength {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  margin-top: var(--spacing-2);
+}
+
+.password-strength__bar {
+  height: 4px;
+  width: 100%;
+  background-color: var(--color-bg-elevated);
+  border-radius: var(--radius-base);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.password-strength__bar--weak {
+  background-color: #ef4444;
+  width: 33%;
+}
+
+.password-strength__bar--medium {
+  background-color: #f59e0b;
+  width: 66%;
+}
+
+.password-strength__bar--strong {
+  background-color: #10b981;
+  width: 100%;
+}
+
+.password-strength__text {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  transition: var(--transition-colors);
+}
+
+.password-strength__text--weak {
+  color: #ef4444;
+}
+
+.password-strength__text--medium {
+  color: #f59e0b;
+}
+
+.password-strength__text--strong {
+  color: #10b981;
+}
+
+/* Error state for input with toggle */
+.input-field__input--error {
+  border-color: var(--color-border-error);
+}

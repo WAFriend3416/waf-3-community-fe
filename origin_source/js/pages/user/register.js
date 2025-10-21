@@ -20,6 +20,13 @@
     };
 
     // ============================================
+    // State Management
+    // ============================================
+    const state = {
+        isSubmitting: false  // 중복 제출 방지 플래그
+    };
+
+    // ============================================
     // DOM Element Caching
     // ============================================
     const elements = {
@@ -34,6 +41,12 @@
         nicknameInput: null,
         submitButton: null,
         goBackButton: null,
+        // Password toggle (비밀번호 표시/숨김)
+        passwordToggle: null,
+        passwordConfirmToggle: null,
+        // Password strength (비밀번호 강도)
+        passwordStrengthBar: null,
+        passwordStrengthText: null,
         // Error elements
         profileImageError: null,
         emailError: null,
@@ -69,6 +82,14 @@
         elements.submitButton = document.querySelector('[data-action="register"]');
         elements.goBackButton = document.querySelector('[data-action="go-back"]');
 
+        // Password toggle
+        elements.passwordToggle = document.querySelector('[data-action="toggle-password"]');
+        elements.passwordConfirmToggle = document.querySelector('[data-action="toggle-password-confirm"]');
+
+        // Password strength
+        elements.passwordStrengthBar = document.querySelector('[data-strength="bar"]');
+        elements.passwordStrengthText = document.querySelector('[data-strength="text"]');
+
         // Error elements
         elements.profileImageError = document.querySelector('[data-error="profileImage"]');
         elements.emailError = document.querySelector('[data-error="email"]');
@@ -84,6 +105,23 @@
         elements.form.addEventListener('submit', handleSubmit);
         elements.profileImageInput.addEventListener('change', handleImageChange);
         elements.goBackButton.addEventListener('click', () => window.history.back());
+
+        // 실시간 검증 (blur 이벤트)
+        elements.emailInput.addEventListener('blur', () => validateField('email'));
+        elements.passwordInput.addEventListener('blur', () => validateField('password'));
+        elements.passwordConfirmInput.addEventListener('blur', () => validateField('passwordConfirm'));
+        elements.nicknameInput.addEventListener('blur', () => validateField('nickname'));
+
+        // 비밀번호 강도 표시 (input 이벤트)
+        elements.passwordInput.addEventListener('input', handlePasswordStrength);
+
+        // 비밀번호 토글 버튼
+        if (elements.passwordToggle) {
+            elements.passwordToggle.addEventListener('click', () => togglePasswordVisibility('password'));
+        }
+        if (elements.passwordConfirmToggle) {
+            elements.passwordConfirmToggle.addEventListener('click', () => togglePasswordVisibility('passwordConfirm'));
+        }
 
         // 입력 시 에러 메시지 제거
         elements.profileImageInput.addEventListener('change', () => clearError('profileImage'));
@@ -125,14 +163,19 @@
     async function handleSubmit(event) {
         event.preventDefault();
 
+        // 중복 제출 방지
+        if (state.isSubmitting) {
+            return;
+        }
+
         // 폼 검증
         if (!validateForm()) {
             return;
         }
 
-        const email = elements.emailInput.value.trim();
+        const email = sanitizeInput(elements.emailInput.value);
         const password = elements.passwordInput.value;
-        const nickname = elements.nicknameInput.value.trim();
+        const nickname = sanitizeInput(elements.nicknameInput.value);
         const profileImage = elements.profileImageInput.files[0];
 
         // FormData 구성
@@ -146,6 +189,7 @@
         }
 
         try {
+            state.isSubmitting = true;
             setLoading(true);
 
             // API 호출 (multipart/form-data이므로 fetch 직접 사용)
@@ -168,8 +212,82 @@
         } catch (error) {
             handleRegisterError(error);
         } finally {
+            state.isSubmitting = false;
             setLoading(false);
         }
+    }
+
+    /**
+     * 개별 필드 검증 (blur 이벤트용)
+     * @param {string} field - 필드명
+     * @returns {boolean}
+     */
+    function validateField(field) {
+        clearError(field);
+
+        if (field === 'email') {
+            const email = sanitizeInput(elements.emailInput.value);
+
+            if (!email) {
+                showError('email', '이메일을 입력해주세요.');
+                return false;
+            } else if (hasExcessiveWhitespace(elements.emailInput.value)) {
+                showError('email', '이메일에 공백이 너무 많습니다.');
+                return false;
+            } else if (!isValidEmail(email)) {
+                showError('email', '올바른 이메일 형식이 아닙니다.');
+                return false;
+            }
+            return true;
+        }
+
+        if (field === 'password') {
+            const password = elements.passwordInput.value;
+
+            if (!password) {
+                showError('password', '비밀번호를 입력해주세요.');
+                return false;
+            } else if (!isValidPassword(password)) {
+                showError('password', getPasswordPolicyMessage());
+                return false;
+            }
+            return true;
+        }
+
+        if (field === 'passwordConfirm') {
+            const password = elements.passwordInput.value;
+            const passwordConfirm = elements.passwordConfirmInput.value;
+
+            if (!passwordConfirm) {
+                showError('passwordConfirm', '비밀번호 확인을 입력해주세요.');
+                return false;
+            } else if (!isPasswordMatch(password, passwordConfirm)) {
+                showError('passwordConfirm', '비밀번호가 일치하지 않습니다.');
+                return false;
+            }
+            return true;
+        }
+
+        if (field === 'nickname') {
+            const nickname = sanitizeInput(elements.nicknameInput.value);
+
+            if (!nickname) {
+                showError('nickname', '닉네임을 입력해주세요.');
+                return false;
+            } else if (hasExcessiveWhitespace(elements.nicknameInput.value)) {
+                showError('nickname', '닉네임에 공백이 너무 많습니다.');
+                return false;
+            } else if (hasRepeatingCharacters(nickname, 3)) {
+                showError('nickname', '같은 문자를 너무 많이 반복할 수 없습니다.');
+                return false;
+            } else if (!isValidNickname(nickname)) {
+                showError('nickname', `닉네임은 1-${CONFIG.MAX_NICKNAME_LENGTH}자 이내로 입력해주세요.`);
+                return false;
+            }
+            return true;
+        }
+
+        return true;
     }
 
     /**
@@ -179,46 +297,11 @@
     function validateForm() {
         let isValid = true;
 
-        const email = elements.emailInput.value.trim();
-        const password = elements.passwordInput.value;
-        const passwordConfirm = elements.passwordConfirmInput.value;
-        const nickname = elements.nicknameInput.value.trim();
-
-        // 이메일 검증
-        if (!email) {
-            showError('email', '이메일을 입력해주세요.');
-            isValid = false;
-        } else if (!isValidEmail(email)) {
-            showError('email', '올바른 이메일 형식이 아닙니다.');
-            isValid = false;
-        }
-
-        // 비밀번호 검증
-        if (!password) {
-            showError('password', '비밀번호를 입력해주세요.');
-            isValid = false;
-        } else if (!isValidPassword(password)) {
-            showError('password', getPasswordPolicyMessage());
-            isValid = false;
-        }
-
-        // 비밀번호 확인 검증
-        if (!passwordConfirm) {
-            showError('passwordConfirm', '비밀번호 확인을 입력해주세요.');
-            isValid = false;
-        } else if (!isPasswordMatch(password, passwordConfirm)) {
-            showError('passwordConfirm', '비밀번호가 일치하지 않습니다.');
-            isValid = false;
-        }
-
-        // 닉네임 검증
-        if (!nickname) {
-            showError('nickname', '닉네임을 입력해주세요.');
-            isValid = false;
-        } else if (!isValidNickname(nickname)) {
-            showError('nickname', `닉네임은 1-${CONFIG.MAX_NICKNAME_LENGTH}자 이내로 입력해주세요.`);
-            isValid = false;
-        }
+        // 모든 필드 검증
+        if (!validateField('email')) isValid = false;
+        if (!validateField('password')) isValid = false;
+        if (!validateField('passwordConfirm')) isValid = false;
+        if (!validateField('nickname')) isValid = false;
 
         return isValid;
     }
@@ -323,6 +406,55 @@
 
         if (inputElement && field !== 'profileImage') {
             inputElement.classList.remove('input-field__input--error');
+        }
+    }
+
+    /**
+     * 비밀번호 강도 표시 핸들러
+     * input 이벤트로 실시간 업데이트
+     */
+    function handlePasswordStrength() {
+        const password = elements.passwordInput.value;
+
+        // 강도 계산
+        const { strength, percentage } = getPasswordStrength(password);
+
+        // 강도 바 업데이트
+        if (elements.passwordStrengthBar) {
+            elements.passwordStrengthBar.style.width = `${percentage}%`;
+            elements.passwordStrengthBar.className = 'password-strength__bar';
+            elements.passwordStrengthBar.classList.add(`password-strength__bar--${strength}`);
+        }
+
+        // 강도 텍스트 업데이트
+        if (elements.passwordStrengthText) {
+            const message = getPasswordStrengthMessage(strength);
+            elements.passwordStrengthText.textContent = message;
+            elements.passwordStrengthText.className = 'password-strength__text';
+            elements.passwordStrengthText.classList.add(`password-strength__text--${strength}`);
+        }
+    }
+
+    /**
+     * 비밀번호 표시/숨김 토글
+     * @param {string} field - 'password' | 'passwordConfirm'
+     */
+    function togglePasswordVisibility(field) {
+        const inputElement = field === 'password' ? elements.passwordInput : elements.passwordConfirmInput;
+        const toggleButton = field === 'password' ? elements.passwordToggle : elements.passwordConfirmToggle;
+
+        if (!inputElement || !toggleButton) return;
+
+        // type 토글
+        if (inputElement.type === 'password') {
+            inputElement.type = 'text';
+            toggleButton.setAttribute('aria-label', '비밀번호 숨기기');
+            // 아이콘 변경 (CSS로 처리)
+            toggleButton.classList.add('password-toggle--visible');
+        } else {
+            inputElement.type = 'password';
+            toggleButton.setAttribute('aria-label', '비밀번호 표시');
+            toggleButton.classList.remove('password-toggle--visible');
         }
     }
 

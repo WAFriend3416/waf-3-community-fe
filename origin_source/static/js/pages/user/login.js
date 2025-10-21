@@ -11,7 +11,16 @@
     // Configuration
     // ============================================
     const CONFIG = {
-        LIST_URL: '/pages/board/list.html'
+        API_BASE_URL: 'http://localhost:8080',
+        LIST_URL: '/pages/board/list.html',
+        LOGIN_URL: '/pages/user/login.html'
+    };
+
+    // ============================================
+    // State Management
+    // ============================================
+    const state = {
+        isSubmitting: false  // 중복 제출 방지 플래그
     };
 
     // ============================================
@@ -30,6 +39,9 @@
      * 초기화
      */
     function init() {
+        // 로그인 페이지 진입 시 기존 localStorage 정리 (userId 불일치 방지)
+        localStorage.removeItem('userId');
+
         cacheElements();
         bindEvents();
     }
@@ -52,6 +64,10 @@
     function bindEvents() {
         elements.form.addEventListener('submit', handleSubmit);
 
+        // 실시간 검증 (blur 이벤트)
+        elements.emailInput.addEventListener('blur', () => validateField('email'));
+        elements.passwordInput.addEventListener('blur', () => validateField('password'));
+
         // 입력 시 에러 메시지 제거
         elements.emailInput.addEventListener('input', () => clearError('email'));
         elements.passwordInput.addEventListener('input', () => clearError('password'));
@@ -64,35 +80,88 @@
     async function handleSubmit(event) {
         event.preventDefault();
 
+        // 중복 제출 방지
+        if (state.isSubmitting) {
+            return;
+        }
+
         // 폼 검증
         if (!validateForm()) {
             return;
         }
 
-        const email = elements.emailInput.value.trim();
+        const email = sanitizeInput(elements.emailInput.value);
         const password = elements.passwordInput.value;
 
         try {
+            state.isSubmitting = true;
             setLoading(true);
 
             // API 호출 (서버가 HttpOnly Cookie 설정)
-            await fetchWithAuth('/auth/login', {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/auth/login`, {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ email, password })
             });
 
-            // 성공 메시지 (선택)
-            // showSuccess('로그인되었습니다.');
+            const result = await response.json();
 
-            // 게시글 목록으로 리다이렉트
-            // 서버가 access_token, refresh_token Cookie 설정 완료
-            window.location.href = CONFIG.LIST_URL;
+            if (response.ok) {
+                // userId만 localStorage에 저장 (토큰은 Cookie)
+                if (result.data && result.data.userId) {
+                    localStorage.setItem('userId', result.data.userId);
+                }
+
+                // 게시글 목록으로 리다이렉트
+                window.location.href = CONFIG.LIST_URL;
+            } else {
+                throw new Error(result.message);
+            }
 
         } catch (error) {
             handleLoginError(error);
         } finally {
+            state.isSubmitting = false;
             setLoading(false);
         }
+    }
+
+    /**
+     * 개별 필드 검증 (blur 이벤트용)
+     * @param {string} field - 'email' | 'password'
+     * @returns {boolean}
+     */
+    function validateField(field) {
+        clearError(field);
+
+        if (field === 'email') {
+            const email = sanitizeInput(elements.emailInput.value);
+
+            if (!email) {
+                showError('email', '이메일을 입력해주세요.');
+                return false;
+            } else if (hasExcessiveWhitespace(elements.emailInput.value)) {
+                showError('email', '이메일에 공백이 너무 많습니다.');
+                return false;
+            } else if (!isValidEmail(email)) {
+                showError('email', '올바른 이메일 형식이 아닙니다.');
+                return false;
+            }
+            return true;
+        }
+
+        if (field === 'password') {
+            const password = elements.passwordInput.value;
+
+            if (!password) {
+                showError('password', '비밀번호를 입력해주세요.');
+                return false;
+            }
+            return true;
+        }
+
+        return true;
     }
 
     /**
@@ -102,23 +171,9 @@
     function validateForm() {
         let isValid = true;
 
-        const email = elements.emailInput.value.trim();
-        const password = elements.passwordInput.value;
-
-        // 이메일 검증
-        if (!email) {
-            showError('email', '이메일을 입력해주세요.');
-            isValid = false;
-        } else if (!isValidEmail(email)) {
-            showError('email', '올바른 이메일 형식이 아닙니다.');
-            isValid = false;
-        }
-
-        // 비밀번호 검증 (빈 값만 체크)
-        if (!password) {
-            showError('password', '비밀번호를 입력해주세요.');
-            isValid = false;
-        }
+        // 모든 필드 검증
+        if (!validateField('email')) isValid = false;
+        if (!validateField('password')) isValid = false;
 
         return isValid;
     }

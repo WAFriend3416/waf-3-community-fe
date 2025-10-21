@@ -156,3 +156,121 @@ function getImageFileError(file) {
 function getPasswordPolicyMessage() {
     return '비밀번호는 8-20자, 대문자/소문자/특수문자를 각각 1개 이상 포함해야 합니다.';
 }
+
+// ============================================
+// 스팸/도배 검증 함수
+// ============================================
+
+/**
+ * 연속된 동일 문자 검증
+ * 같은 문자가 threshold번 이상 반복되면 도배로 간주
+ *
+ * @param {string} str - 검사할 문자열
+ * @param {number} threshold - 허용 반복 횟수 (기본 4)
+ * @returns {boolean} - true면 정상, false면 도배
+ */
+function hasRepeatingCharacters(str, threshold = 4) {
+    if (!str || typeof str !== 'string') return false;
+
+    const regex = new RegExp(`(.)\\1{${threshold - 1},}`, 'g');
+    return regex.test(str);
+}
+
+/**
+ * 과도한 공백 검증
+ * 연속 공백이 3개 이상이거나 앞뒤 공백만 있는 경우
+ *
+ * @param {string} str - 검사할 문자열
+ * @returns {boolean} - true면 문제 있음
+ */
+function hasExcessiveWhitespace(str) {
+    if (!str || typeof str !== 'string') return false;
+
+    // 연속 공백 3개 이상
+    if (/\s{3,}/.test(str)) return true;
+
+    // trim 후 빈 문자열 (공백만 있음)
+    if (str.trim().length === 0) return true;
+
+    return false;
+}
+
+/**
+ * 입력값 정제
+ * - 앞뒤 공백 제거
+ * - 연속된 공백을 하나로 축소
+ *
+ * @param {string} str - 정제할 문자열
+ * @returns {string} - 정제된 문자열
+ */
+function sanitizeInput(str) {
+    if (!str || typeof str !== 'string') return '';
+
+    return str
+        .trim()                    // 앞뒤 공백 제거
+        .replace(/\s+/g, ' ');     // 연속 공백을 하나로
+}
+
+/**
+ * 비밀번호 강도 계산
+ * 점수 기반으로 weak/medium/strong 반환
+ *
+ * 점수 계산:
+ * - 길이 8자 이상: +1
+ * - 길이 12자 이상: +1
+ * - 소문자: +1
+ * - 대문자: +1
+ * - 숫자: +1
+ * - 특수문자: +1
+ *
+ * 강도:
+ * - 0-2점: weak
+ * - 3-4점: medium
+ * - 5-6점: strong
+ *
+ * @param {string} password - 비밀번호
+ * @returns {object} - { strength: 'weak|medium|strong', score: 0-6, percentage: 0-100 }
+ */
+function getPasswordStrength(password) {
+    if (!password) return { strength: 'weak', score: 0, percentage: 0 };
+
+    let score = 0;
+
+    // 길이 점수
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+
+    // 문자 종류 점수
+    if (/[a-z]/.test(password)) score++;  // 소문자
+    if (/[A-Z]/.test(password)) score++;  // 대문자
+    if (/[0-9]/.test(password)) score++;  // 숫자
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;  // 특수문자
+
+    // 강도 판정
+    let strength;
+    if (score <= 2) strength = 'weak';
+    else if (score <= 4) strength = 'medium';
+    else strength = 'strong';
+
+    // 퍼센티지 계산 (0-100)
+    const percentage = Math.round((score / 6) * 100);
+
+    return { strength, score, percentage };
+}
+
+/**
+ * 비밀번호 강도 메시지
+ * 사용자에게 보여줄 텍스트
+ *
+ * @param {string} strength - 'weak' | 'medium' | 'strong'
+ * @returns {string}
+ */
+function getPasswordStrengthMessage(strength) {
+    const messages = {
+        weak: '약함 - 더 안전한 비밀번호를 사용하세요',
+        medium: '보통 - 괜찮은 비밀번호입니다',
+        strong: '강함 - 안전한 비밀번호입니다'
+    };
+
+    return messages[strength] || '';
+}
