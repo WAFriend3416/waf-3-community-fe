@@ -194,10 +194,10 @@ testApiConnection();
 ```
 
 ### 완료 조건
-- [ ] Spring Boot CORS 설정에 `http://localhost:3000` 추가
-- [ ] `allowCredentials(true)` 설정 (Cookie 전송)
-- [ ] 프론트엔드 → Spring Boot API 호출 성공
-- [ ] CORS 에러 없음 (Network 탭 확인)
+- [x] Spring Boot CORS 설정에 `http://localhost:3000` 추가 (✅ 백엔드 완료 2025-10-20)
+- [x] `allowCredentials(true)` 설정 (Cookie 전송) (✅ 백엔드 완료 2025-10-20)
+- [ ] 프론트엔드 → Spring Boot API 호출 성공 (⏳ 수동 테스트 필요)
+- [ ] CORS 에러 없음 (Network 탭 확인) (⏳ 수동 테스트 필요)
 
 ---
 
@@ -277,12 +277,12 @@ window.location.href = '/pages/board/list.html';
 | **Network 감청** | ⚠️ HTTPS 필요 | ✅ Secure 플래그 |
 
 ### 완료 조건
-- [ ] Spring Boot: Cookie 기반 JWT 발급 구현
-- [ ] Spring Boot: JwtAuthenticationFilter Cookie 추출 구현
-- [ ] 프론트엔드: localStorage 토큰 로직 제거
-- [ ] 프론트엔드: 모든 API 호출에 `credentials: 'include'` 추가
-- [ ] 로그인/로그아웃/토큰 갱신 테스트 통과
-- [ ] Chrome DevTools → Application → Cookies 확인
+- [x] Spring Boot: Cookie 기반 JWT 발급 구현 (✅ 백엔드 완료 2025-10-20)
+- [x] Spring Boot: JwtAuthenticationFilter Cookie 추출 구현 (✅ 백엔드 완료 2025-10-20)
+- [x] 프론트엔드: localStorage 토큰 로직 제거 (✅ 프론트엔드 완료 2025-10-21)
+- [x] 프론트엔드: 모든 API 호출에 `credentials: 'include'` 추가 (✅ 프론트엔드 완료 2025-10-21)
+- [ ] 로그인/로그아웃/토큰 갱신 테스트 통과 (⏳ 수동 테스트 필요)
+- [ ] Chrome DevTools → Application → Cookies 확인 (⏳ 수동 테스트 필요)
 
 ---
 
@@ -423,12 +423,13 @@ services:
 | Phase | 작업 내용 | 상태 | 완료일 |
 |-------|----------|------|--------|
 | Phase 1 | Express.js 정적 파일 서버 구축 | ✅ 완료 | 2025-10-20 |
-| Phase 2 | CORS 설정 및 API 연동 확인 | ⏳ 대기 | - |
-| Phase 3 | JWT HttpOnly Cookie 전환 | ⚠️ 진행 중 | - |
+| Phase 2 | CORS 설정 및 API 연동 확인 | ⚠️ 코드 완료, 테스트 대기 | 2025-10-20 |
+| Phase 3 | JWT HttpOnly Cookie 전환 | ⚠️ 코드 완료, 테스트 대기 | 2025-10-21 |
 | Phase 4 | 통합 테스트 및 검증 | ⏳ 대기 | - |
 | Phase 5 | 배포 준비 및 최적화 | ⏳ 대기 | - |
 
-**다음 단계**: Phase 2 시작 - Spring Boot CORS 설정 확인 및 API 연동 테스트
+**현재 진행률**: Phase 2 (2/4 완료, 50%), Phase 3 (4/6 완료, 67%)
+**다음 단계**: Spring Boot 백엔드 실행 → Phase 2/3 통합 수동 테스트 → Phase 4 진입
 
 ---
 
@@ -439,3 +440,5 @@ services:
 | 2025-10-20 | 1.0 | Spring Boot → Express.js 마이그레이션 계획 (삭제됨) |
 | 2025-10-20 | 2.0 | Express.js 정적 파일 서빙 서버 구축 가이드로 전면 재작성 |
 | 2025-10-20 | 2.1 | 코드 예제 간소화 (711줄 → 440줄, 38% 감소) - 핵심 스니펫만 유지 |
+| 2025-10-21 | 2.2 | Phase 3 프론트엔드 작업 완료 (localStorage 제거, credentials 추가) - 진행률 67% |
+| 2025-10-21 | 2.3 | Phase 2 백엔드 CORS 설정 검증 완료 - Phase 2/3 통합 테스트 대기 |
