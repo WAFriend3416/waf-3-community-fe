@@ -21,7 +21,13 @@
     uploadedImageId: null,
     selectedFile: null,
     removeExistingImage: false,
-    isSubmitting: false
+    isSubmitting: false,
+    hasChanges: false,  // 변경사항 추적
+    initialData: {      // 초기 데이터 저장
+      title: '',
+      content: '',
+      imageUrl: ''
+    }
   };
 
   const elements = {
@@ -54,6 +60,8 @@
 
     cacheElements();
     bindEvents();
+    loadUserProfile();  // 프로필 로드
+    setupBackNavigation();  // 브라우저 뒤로가기 처리
     loadPost();
   }
 
@@ -86,18 +94,84 @@
     if (elements.profileDropdown) {
       elements.profileDropdown.addEventListener('click', handleProfileMenuClick);
     }
-    document.querySelector('[data-action="go-back"]')?.addEventListener('click', e => {
-      e.preventDefault();
-      if (confirm('수정 중인 내용이 사라집니다. 나가시겠습니까?')) {
-        window.location.href = `${CONFIG.DETAIL_URL}?id=${state.postId}`;
+
+    // 뒤로가기/취소 버튼
+    document.querySelector('[data-action="go-back"]')?.addEventListener('click', handleBack);
+    document.querySelector('[data-action="cancel"]')?.addEventListener('click', handleCancel);
+
+    // 입력 시 변경 감지
+    if (elements.titleInput) {
+      elements.titleInput.addEventListener('input', () => {
+        checkForChanges();
+      });
+    }
+    if (elements.contentTextarea) {
+      elements.contentTextarea.addEventListener('input', () => {
+        checkForChanges();
+      });
+    }
+  }
+
+  // ============================================
+  // Profile Load
+  // ============================================
+  async function loadUserProfile() {
+    const profileMenu = document.querySelector('[data-auth="authenticated"]');
+
+    if (!isAuthenticated()) {
+      // 비로그인: 프로필 메뉴 숨김
+      if (profileMenu) profileMenu.style.display = 'none';
+      return;
+    }
+
+    // 로그인: 프로필 메뉴 표시
+    if (profileMenu) profileMenu.style.display = 'flex';
+
+    try {
+      const userId = getCurrentUserId();
+
+      // userId 검증
+      if (!userId) {
+        console.warn('Invalid userId, skipping profile load');
+        return;
       }
-    });
-    document.querySelector('[data-action="cancel"]')?.addEventListener('click', e => {
-      e.preventDefault();
-      if (confirm('수정 중인 내용이 사라집니다. 취소하시겠습니까?')) {
-        window.location.href = `${CONFIG.DETAIL_URL}?id=${state.postId}`;
+
+      const user = await fetchWithAuth(`/users/${userId}`);
+
+      if (user) {
+        // 프로필 이미지 업데이트
+        const profileImage = document.querySelector('[data-profile="image"]');
+        const profileName = document.querySelector('[data-profile="nickname"]');
+
+        if (profileImage && user.profileImage) {
+          profileImage.src = user.profileImage;
+        }
+
+        if (profileName && user.nickname) {
+          profileName.textContent = user.nickname;
+        }
       }
-    });
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+    }
+  }
+
+  function handleProfileMenuClick(e) {
+    const logoutTarget = e.target.closest('[data-action="logout"]');
+    if (logoutTarget) {
+      e.preventDefault();
+      handleLogout();
+      return;
+    }
+
+    const profileLink = e.target.closest('[data-action="profile-link"], a.profile-menu__item');
+    if (profileLink && profileLink.tagName === 'A') {
+      e.preventDefault();
+      const href = profileLink.getAttribute('href');
+      if (href) {
+        window.location.href = href;
+      }
+    }
   }
 
   async function loadPost() {
@@ -109,17 +183,26 @@
       elements.titleInput.value = post.title;
       elements.contentTextarea.value = post.content;
 
+      // 초기 데이터 저장 (변경 감지용)
+      state.initialData.title = post.title;
+      state.initialData.content = post.content;
+
       // 기존 이미지 표시
       if (post.images && post.images.length > 0) {
-        elements.previewImage.src = post.images[0];
+        const imageUrl = post.images[0];
+        elements.previewImage.src = imageUrl;
         elements.previewImage.style.display = 'block';
         elements.placeholder.style.display = 'none';
         elements.removeImageButton.style.display = 'block';
+        state.initialData.imageUrl = imageUrl;
         // imageId는 API 응답에 포함되어야 함 (백엔드 확인 필요)
         if (post.imageId) {
           state.uploadedImageId = post.imageId;
         }
       }
+
+      // 초기 상태에서는 저장 버튼 비활성화
+      updateSubmitButtonState();
     } catch (error) {
       console.error('Failed to load post:', error);
       Toast.error('게시글을 불러오는데 실패했습니다.', '오류', 2000, () => {
@@ -136,7 +219,7 @@
 
     state.isSubmitting = true;
     elements.submitButton.disabled = true;
-    elements.submitButton.textContent = '수정 중...';
+    elements.submitButton.innerHTML = '<span class="loading-spinner"></span> 수정 중...';
 
     try {
       // 새 이미지 업로드
@@ -151,12 +234,16 @@
         content: elements.contentTextarea.value.trim()
       };
 
-      // 이미지 처리
+      // 이미지 처리 (API.md Section 3.4 스펙 준수)
       if (state.removeExistingImage) {
-        body.imageId = null;  // camelCase로 통일
+        body.removeImage = true;  // 명시적 제거 신호
+        console.log('[DEBUG] 이미지 제거 요청:', { removeImage: true });
       } else if (state.uploadedImageId) {
-        body.imageId = state.uploadedImageId;  // camelCase로 통일
+        body.imageId = state.uploadedImageId;
+        console.log('[DEBUG] 이미지 변경 요청:', { imageId: state.uploadedImageId });
       }
+
+      console.log('[DEBUG] 게시글 수정 요청 body:', JSON.stringify(body, null, 2));
 
       await fetchWithAuth(`/posts/${state.postId}`, {
         method: 'PATCH',
@@ -164,7 +251,7 @@
       });
 
       // 성공 - 토스트 메시지 후 상세 페이지로 이동
-      Toast.success('게시글이 수정되었습니다.', '수정 완료', 2000, () => {
+      Toast.success('게시글이 수정되었습니다.', '수정 완료', 1200, () => {
         window.location.href = `${CONFIG.DETAIL_URL}?id=${state.postId}`;
       });
     } catch (error) {
@@ -173,7 +260,7 @@
       Toast.error(errorMessage, '오류');
       state.isSubmitting = false;
       elements.submitButton.disabled = false;
-      elements.submitButton.textContent = '수정완료';
+      elements.submitButton.textContent = '수정완료';  // 스피너 제거
     }
   }
 
@@ -197,6 +284,9 @@
       elements.removeImageButton.style.display = 'block';
     };
     reader.readAsDataURL(file);
+
+    // 변경 감지
+    checkForChanges();
   }
 
   function handleRemoveImage() {
@@ -204,11 +294,20 @@
     state.uploadedImageId = null;
     state.removeExistingImage = true;
 
+    console.log('[DEBUG] handleRemoveImage 호출:', {
+      selectedFile: state.selectedFile,
+      uploadedImageId: state.uploadedImageId,
+      removeExistingImage: state.removeExistingImage
+    });
+
     elements.previewImage.src = '';
     elements.previewImage.style.display = 'none';
     elements.placeholder.style.display = 'flex';
     elements.removeImageButton.style.display = 'none';
     elements.imageInput.value = '';
+
+    // 변경 감지
+    checkForChanges();
   }
 
   function handleProfileMenuClick(e) {
@@ -224,7 +323,7 @@
       e.preventDefault();
       const href = profileLink.getAttribute('href');
       if (href) {
-        window.location.replace(href);
+        window.location.href = href;  // Changed from replace() to preserve history
       }
     }
   }
@@ -237,6 +336,68 @@
     } finally {
       window.location.replace(CONFIG.LOGIN_URL);
     }
+  }
+
+  async function handleBack(e) {
+    e.preventDefault();
+    if (state.hasChanges) {
+      const confirmed = await confirmModal(
+        '수정 중인 내용 확인',
+        '저장하지 않은 변경사항이 있습니다. 페이지를 나가시겠습니까?'
+      );
+      if (!confirmed) return;
+      state.hasChanges = false;  // beforeunload 건너뛰기
+    }
+    window.location.href = `${CONFIG.DETAIL_URL}?id=${state.postId}`;
+  }
+
+  async function handleCancel(e) {
+    e.preventDefault();
+    if (state.hasChanges) {
+      const confirmed = await confirmModal(
+        '수정 중인 내용 확인',
+        '저장하지 않은 변경사항이 있습니다. 취소하시겠습니까?'
+      );
+      if (!confirmed) return;
+      state.hasChanges = false;  // beforeunload 건너뛰기
+    }
+    window.location.href = `${CONFIG.DETAIL_URL}?id=${state.postId}`;
+  }
+
+  function checkForChanges() {
+    const currentTitle = elements.titleInput ? elements.titleInput.value : '';
+    const currentContent = elements.contentTextarea ? elements.contentTextarea.value : '';
+    const currentImageUrl = elements.previewImage && elements.previewImage.style.display !== 'none'
+      ? elements.previewImage.src : '';
+
+    const hasTitleChange = currentTitle !== state.initialData.title;
+    const hasContentChange = currentContent !== state.initialData.content;
+    const hasImageChange = state.selectedFile !== null || state.removeExistingImage ||
+                          currentImageUrl !== state.initialData.imageUrl;
+
+    state.hasChanges = hasTitleChange || hasContentChange || hasImageChange;
+    updateSubmitButtonState();
+  }
+
+  function updateSubmitButtonState() {
+    if (elements.submitButton) {
+      elements.submitButton.disabled = !state.hasChanges || state.isSubmitting;
+    }
+  }
+
+  /**
+   * 브라우저 뒤로가기 처리
+   */
+  function setupBackNavigation() {
+    // beforeunload: 페이지 떠날 때
+    window.addEventListener('beforeunload', (event) => {
+      // 변경사항 있으면 브라우저 기본 경고
+      if (state.hasChanges) {
+        event.preventDefault();
+        event.returnValue = ''; // Chrome 필수
+        return '';
+      }
+    });
   }
 
   function validateForm() {
