@@ -55,7 +55,7 @@ const response = await fetch('http://localhost:8080/auth/login', {
 });
 
 const data = await response.json();
-// { message: "login_success", data: { userId, email, nickname }, timestamp }
+// { message: "login_success", data: { userId, email, nickname, profileImage }, timestamp }
 // 서버가 access_token, refresh_token Cookie 자동 설정
 
 // 인증 API 호출
@@ -394,6 +394,123 @@ const posts = await fetch('http://localhost:8080/posts', {
 
 ---
 
+## 8. Toast 알림 시스템
+
+### 8.1 개요
+
+Toast는 사용자에게 간단한 피드백 메시지를 제공하는 비침투적(non-intrusive) 알림 컴포넌트입니다. 성공, 에러, 경고, 정보 메시지를 3초간 표시하며 자동으로 사라집니다.
+
+### 8.2 기본 사용법
+
+**HTML 로드**:
+```html
+<script src="/static/js/common/toast.js"></script>
+<link rel="stylesheet" href="/static/css/components/toast.css">
+```
+
+**JavaScript 사용**:
+```javascript
+// 성공 메시지
+Toast.success('저장되었습니다.', '프로필 정보');
+
+// 에러 메시지
+Toast.error('오류가 발생했습니다.', '다시 시도해주세요.');
+
+// 경고 메시지
+Toast.warning('확인이 필요합니다.', '경고');
+
+// 정보 메시지
+Toast.info('댓글이 등록되었습니다.', '안내');
+```
+
+### 8.3 API 레퍼런스
+
+| 메서드 | 파라미터 | 설명 |
+|--------|---------|------|
+| `Toast.success(message, title, duration, onClose)` | message: string (필수)<br>title: string (기본: '성공')<br>duration: number (기본: 3000ms)<br>onClose: function (선택) | 성공 메시지 표시 (녹색) |
+| `Toast.error(message, title, duration, onClose)` | 상동 | 에러 메시지 표시 (빨강) |
+| `Toast.warning(message, title, duration, onClose)` | 상동 | 경고 메시지 표시 (주황) |
+| `Toast.info(message, title, duration, onClose)` | 상동 | 정보 메시지 표시 (파랑) |
+
+### 8.4 실전 예제
+
+#### API 에러 처리
+```javascript
+try {
+  const data = await fetchWithAuth('/posts', {
+    method: 'POST',
+    body: JSON.stringify(postData)
+  });
+  Toast.success('게시글이 등록되었습니다.');
+} catch (error) {
+  Toast.error(translateErrorCode(error.message), '게시글 등록 실패');
+}
+```
+
+#### 사용자 입력 검증
+```javascript
+if (!validatePassword(password)) {
+  Toast.warning('비밀번호는 8-20자이며, 대/소/특수문자를 포함해야 합니다.', '입력 오류');
+  return;
+}
+```
+
+#### 커스텀 지속 시간
+```javascript
+// 5초간 표시
+Toast.info('이메일 인증 링크를 발송했습니다.', '회원가입', 5000);
+```
+
+#### 콜백 함수
+```javascript
+Toast.success('삭제되었습니다.', '게시글', 3000, () => {
+  window.location.href = '/static/pages/board/list.html';
+});
+```
+
+### 8.5 스타일 커스터마이징
+
+Toast는 BEM 네이밍 규칙을 따릅니다:
+- `.toast`: 기본 컨테이너
+- `.toast--success`, `.toast--error`, `.toast--warning`, `.toast--info`: 타입별 스타일
+- `.toast__icon`: 아이콘 영역
+- `.toast__content`: 메시지 영역
+- `.toast__title`: 제목
+- `.toast__message`: 본문
+- `.toast__close`: 닫기 버튼
+
+**커스텀 스타일 예시**:
+```css
+/* 커스텀 위치 */
+.toast-container {
+  top: 20px;
+  right: 20px;
+}
+
+/* 커스텀 색상 */
+.toast--success {
+  background: #10b981;
+}
+```
+
+### 8.6 접근성 (Accessibility)
+
+- `aria-label="닫기"` 속성으로 스크린 리더 지원
+- 키보드로 닫기 버튼 포커스 가능
+- SVG 아이콘으로 명확한 시각적 피드백
+- 애니메이션 300ms (부드러운 전환)
+
+### 8.7 제약사항
+
+- 동시에 여러 Toast 표시 가능 (스택 형태)
+- XSS 방지: 모든 텍스트는 `escapeHtml()` 처리됨
+- HTML 마크업 불가 (텍스트만 지원)
+- duration=0 시 수동 닫기만 가능
+
+**참조**: `origin_source/static/js/common/toast.js` (전체 구현)
+
+---
+
 ## FAQ
 
 **Q1. Access Token이 만료되면?**
@@ -434,3 +551,4 @@ A5. `PORT=8000 npm start` 또는 `.env` 파일 수정
 | 2025-10-20 | 3.1 | 코드 예제 간소화 (482줄 → 435줄, 10% 감소) - 핵심 스니펫만 유지 |
 | 2025-10-20 | 2.1 | 중복 제거 (API.md/LLD.md 참조 방식) - 40-55% → <20% |
 | 2025-10-20 | 3.0 | HttpOnly Cookie 전환 완료 (localStorage → credentials: 'include'), 페이지네이션 코드 중복 제거 (70줄 → 32줄) |
+| 2025-10-22 | 3.2 | Toast 알림 시스템 문서 추가 (Section 8) - API, 실전 예제, 접근성 가이드 |
