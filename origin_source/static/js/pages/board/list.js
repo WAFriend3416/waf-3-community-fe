@@ -147,7 +147,7 @@
       e.preventDefault();
       const href = profileLink.getAttribute('href');
       if (href) {
-        window.location.replace(href);
+        window.location.href = href;  // Changed from replace() to preserve history
       }
     }
   }
@@ -355,6 +355,12 @@
       // 프로필 이미지 설정
       if (elements.profileImage && user.profileImage) {
         elements.profileImage.src = user.profileImage;
+      }
+
+      // 프로필 닉네임 설정
+      const profileNickname = document.querySelector('[data-profile="nickname"]');
+      if (profileNickname && user.nickname) {
+        profileNickname.textContent = user.nickname;
       }
     } catch (error) {
       console.error('Failed to load user profile:', error);

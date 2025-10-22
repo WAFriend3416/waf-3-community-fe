@@ -159,6 +159,13 @@
       if (confirmButton) {
         confirmButton.addEventListener('click', confirmDeletePost);
       }
+
+      // Overlay click to close
+      elements.deleteModal.addEventListener('click', (e) => {
+        if (e.target === elements.deleteModal) {
+          closeDeleteModal();
+        }
+      });
     }
 
     // Profile menu
@@ -241,11 +248,11 @@
 
   function handleEditPost(e) {
     e.preventDefault();
-    window.location.href = `${CONFIG.EDIT_POST_URL}?id=${state.postId}`;
+    window.location.replace(`${CONFIG.EDIT_POST_URL}?id=${state.postId}`);  // replace()로 히스토리 중복 방지
   }
 
   function handleDeletePost(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
     openDeleteModal();
   }
 
@@ -340,7 +347,12 @@
   async function handleDeleteComment(e, button) {
     e.preventDefault();
 
-    if (!confirm('댓글을 삭제하시겠습니까?')) return;
+    const confirmed = await confirmModal(
+      '댓글 삭제',
+      '정말 삭제하시겠습니까?',
+      { isDanger: true }
+    );
+    if (!confirmed) return;
 
     const commentItem = button.closest('[data-comment-id]');
     if (!commentItem) return;
@@ -375,7 +387,7 @@
       e.preventDefault();
       const href = profileLink.getAttribute('href');
       if (href) {
-        window.location.replace(href);
+        window.location.href = href;  // Changed from replace() to preserve history
       }
     }
   }
@@ -707,13 +719,21 @@
   // ============================================
   function openDeleteModal() {
     if (elements.deleteModal) {
-      elements.deleteModal.style.display = 'flex';
+      document.body.classList.add('modal-open');
+      setTimeout(() => {
+        elements.deleteModal.classList.add('is-active');
+      }, 10);
     }
   }
 
   function closeDeleteModal() {
     if (elements.deleteModal) {
-      elements.deleteModal.style.display = 'none';
+      elements.deleteModal.classList.remove('is-active');
+      setTimeout(() => {
+        if (!document.querySelector('.modal-overlay.is-active')) {
+          document.body.classList.remove('modal-open');
+        }
+      }, 300);
     }
   }
 
@@ -753,6 +773,12 @@
 
       if (elements.profileImage && user.profileImage) {
         elements.profileImage.src = user.profileImage;
+      }
+
+      // 프로필 닉네임 설정
+      const profileNickname = document.querySelector('[data-profile="nickname"]');
+      if (profileNickname && user.nickname) {
+        profileNickname.textContent = user.nickname;
       }
     } catch (error) {
       console.error('Failed to load user profile:', error);

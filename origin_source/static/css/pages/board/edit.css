@@ -9,6 +9,10 @@
   background-color: #FFFFFF;
 }
 
+.edit-form .input-field__textarea {
+  resize: none;  /* 크기 조절 비활성화 */
+}
+
 .edit-form .input-field__input::placeholder,
 .edit-form .input-field__textarea::placeholder {
   color: #666666;

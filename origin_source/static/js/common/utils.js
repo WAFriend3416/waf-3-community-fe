@@ -209,77 +209,68 @@ function buildQuery(params) {
  *
  * @param {string} title - 제목
  * @param {string} description - 설명
+ * @param {object} options - { isDanger: boolean } - 위험한 작업 여부
  * @returns {Promise<boolean>} - 확인: true, 취소: false
  */
-function confirmModal(title, description) {
+function confirmModal(title, description, options = {}) {
     return new Promise((resolve) => {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.setAttribute('data-modal', '');
-        modal.innerHTML = `
-            <div class="modal__backdrop"></div>
-            <div class="modal__container">
-                <div class="modal__content">
-                    <h3 class="modal__title">${escapeHtml(title)}</h3>
-                    <p class="modal__description">${escapeHtml(description)}</p>
-                    <div class="modal__actions">
-                        <button class="btn btn--secondary" data-action="cancel">취소</button>
-                        <button class="btn btn--primary" data-action="confirm">확인</button>
+        // 기존 모달이 있으면 제거
+        const existingModal = document.querySelector('[data-modal="confirm-dynamic"]');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.setAttribute('data-modal', 'confirm-dynamic');
+        overlay.innerHTML = `
+            <div class="modal modal--confirm">
+                <div class="modal__body">
+                    <div class="modal__icon modal__icon--warning">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                        </svg>
                     </div>
+                    <div class="modal__message">${escapeHtml(title)}</div>
+                    <div class="modal__description">${escapeHtml(description)}</div>
+                </div>
+                <div class="modal__footer">
+                    <button class="btn btn--secondary" data-action="cancel">취소</button>
+                    <button class="btn ${options.isDanger ? 'btn--danger' : 'btn--primary'}" data-action="confirm">확인</button>
                 </div>
             </div>
         `;
 
-        // 스타일 적용 (인라인)
-        Object.assign(modal.style, {
-            display: 'flex',
-            position: 'fixed',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: '1050'
-        });
+        document.body.appendChild(overlay);
+        document.body.classList.add('modal-open');
 
-        const backdrop = modal.querySelector('.modal__backdrop');
-        Object.assign(backdrop.style, {
-            position: 'absolute',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)'
-        });
+        setTimeout(() => overlay.classList.add('is-active'), 10);
 
-        const container = modal.querySelector('.modal__container');
-        Object.assign(container.style, {
-            position: 'relative',
-            maxWidth: '500px',
-            width: '90%',
-            backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            padding: '24px',
-            zIndex: '1051'
-        });
+        const closeModal = () => {
+            overlay.classList.remove('is-active');
+            setTimeout(() => {
+                overlay.remove();
+                if (!document.querySelector('.modal-overlay')) {
+                    document.body.classList.remove('modal-open');
+                }
+            }, 300);
+        };
 
-        document.body.appendChild(modal);
-
-        // 이벤트 리스너
-        modal.querySelector('[data-action="cancel"]').addEventListener('click', () => {
-            modal.remove();
+        overlay.querySelector('[data-action="cancel"]').addEventListener('click', () => {
+            closeModal();
             resolve(false);
         });
 
-        modal.querySelector('[data-action="confirm"]').addEventListener('click', () => {
-            modal.remove();
+        overlay.querySelector('[data-action="confirm"]').addEventListener('click', () => {
+            closeModal();
             resolve(true);
         });
 
-        backdrop.addEventListener('click', () => {
-            modal.remove();
-            resolve(false);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeModal();
+                resolve(false);
+            }
         });
     });
 }

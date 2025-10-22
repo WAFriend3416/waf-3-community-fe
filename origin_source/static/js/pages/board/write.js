@@ -26,7 +26,8 @@
     uploadedImageId: null,
     uploadedImageUrl: null,
     selectedFile: null,
-    isSubmitting: false
+    isSubmitting: false,
+    skipBeforeunload: false  // 모달 확인 후 beforeunload 건너뛰기
   };
 
   // ============================================
@@ -56,7 +57,10 @@
   // ============================================
   function init() {
     cacheElements();
+    cleanupInlineStyles();  // 인라인 스타일 정리
     bindEvents();
+    loadUserProfile();  // 프로필 로드
+    setupBackNavigation();  // 브라우저 뒤로가기 처리
   }
 
   function cacheElements() {
@@ -76,6 +80,20 @@
     elements.titleError = document.querySelector('[data-error="title"]');
     elements.contentError = document.querySelector('[data-error="content"]');
     elements.imageError = document.querySelector('[data-error="image"]');
+  }
+
+  /**
+   * 오류 요소의 인라인 스타일 제거 (CSS가 제어하도록)
+   * 이전 실행으로 남아있을 수 있는 display 스타일 정리
+   */
+  function cleanupInlineStyles() {
+    const errorElements = [elements.titleError, elements.contentError, elements.imageError];
+    errorElements.forEach(el => {
+      if (el) {
+        el.style.display = '';  // 인라인 스타일 제거
+        el.textContent = '';     // 텍스트 초기화
+      }
+    });
   }
 
   // ============================================
@@ -103,21 +121,84 @@
     }
 
     // Profile menu navigation
-    if (elements.profileDropdown) {
-      elements.profileDropdown.addEventListener('click', handleProfileMenuClick);
-    }
-
     // Real-time validation
     if (elements.titleInput) {
       elements.titleInput.addEventListener('input', validateTitle);
       elements.titleInput.addEventListener('blur', handleTitleBlur);
       elements.titleInput.addEventListener('keydown', handleTitleKeyDown);
     }
+
+    // Profile menu
+    if (elements.profileDropdown) {
+      elements.profileDropdown.addEventListener('click', handleProfileMenuClick);
+    }
+  }
+
+  // ============================================
+  // Profile Load
+  // ============================================
+  async function loadUserProfile() {
+    const profileMenu = document.querySelector('[data-auth="authenticated"]');
+
+    if (!isAuthenticated()) {
+      // 비로그인: 프로필 메뉴 숨김
+      if (profileMenu) profileMenu.style.display = 'none';
+      return;
+    }
+
+    // 로그인: 프로필 메뉴 표시
+    if (profileMenu) profileMenu.style.display = 'flex';
+
+    try {
+      const userId = getCurrentUserId();
+
+      // userId 검증
+      if (!userId) {
+        console.warn('Invalid userId, skipping profile load');
+        return;
+      }
+
+      const user = await fetchWithAuth(`/users/${userId}`);
+
+      if (user) {
+        // 프로필 이미지 업데이트
+        const profileImage = document.querySelector('[data-profile="image"]');
+        const profileName = document.querySelector('[data-profile="nickname"]');
+
+        if (profileImage && user.profileImage) {
+          profileImage.src = user.profileImage;
+        }
+
+        if (profileName && user.nickname) {
+          profileName.textContent = user.nickname;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+    }
   }
 
   // ============================================
   // Event Handlers
   // ============================================
+  function handleProfileMenuClick(e) {
+    const logoutTarget = e.target.closest('[data-action="logout"]');
+    if (logoutTarget) {
+      e.preventDefault();
+      handleLogout();
+      return;
+    }
+
+    const profileLink = e.target.closest('[data-action="profile-link"], a.profile-menu__item');
+    if (profileLink && profileLink.tagName === 'A') {
+      e.preventDefault();
+      const href = profileLink.getAttribute('href');
+      if (href) {
+        window.location.href = href;
+      }
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
 
@@ -161,6 +242,7 @@
       });
 
       // 성공 - 토스트 메시지 후 상세 페이지로 이동
+      state.skipBeforeunload = true;  // beforeunload 경고 건너뛰기
       Toast.success('게시글이 작성되었습니다.', '작성 완료', 2000, () => {
         window.location.replace(`${CONFIG.DETAIL_URL}?id=${post.postId}`);
       });
@@ -193,18 +275,54 @@
     clearImageError();
   }
 
-  function handleBack(e) {
+  async function handleBack(e) {
     e.preventDefault();
-    if (confirm('작성 중인 내용이 사라집니다. 나가시겠습니까?')) {
-      window.history.back();
+    const confirmed = await confirmModal(
+      '작성 중인 내용 확인',
+      '저장하지 않은 내용이 사라집니다. 나가시겠습니까?'
+    );
+    if (confirmed) {
+      state.skipBeforeunload = true;  // beforeunload 건너뛰기
+      window.location.replace(CONFIG.LIST_URL);  // replace()로 history 중복 방지
     }
   }
 
-  function handleCancel(e) {
+  async function handleCancel(e) {
     e.preventDefault();
-    if (confirm('작성 중인 내용이 사라집니다. 취소하시겠습니까?')) {
-      window.location.href = CONFIG.LIST_URL;
+    const confirmed = await confirmModal(
+      '작성 중인 내용 확인',
+      '저장하지 않은 내용이 사라집니다. 취소하시겠습니까?'
+    );
+    if (confirmed) {
+      state.skipBeforeunload = true;  // beforeunload 건너뛰기
+      window.location.replace(CONFIG.LIST_URL);  // replace()로 history 중복 방지
     }
+  }
+
+  /**
+   * 브라우저 뒤로가기 처리
+   *
+   * 원리:
+   * 1. beforeunload 이벤트로 페이지 떠남 감지
+   * 2. 모달 확인 후에는 경고 건너뛰기 (state.skipBeforeunload)
+   * 3. 브라우저 기본 경고 표시 (작성 중인 내용 보호)
+   */
+  function setupBackNavigation() {
+    // beforeunload: 페이지 떠날 때
+    window.addEventListener('beforeunload', (event) => {
+      // 모달 확인 후에는 경고 안 함
+      if (state.skipBeforeunload) return;
+
+      // 제목이나 내용이 있으면 경고
+      const hasContent = (elements.titleInput?.value.trim() || '') !== '' ||
+                        (elements.contentTextarea?.value.trim() || '') !== '';
+
+      if (hasContent) {
+        event.preventDefault();
+        event.returnValue = ''; // Chrome 필수
+        return '';
+      }
+    });
   }
 
   function handleTitleBlur() {
@@ -255,7 +373,7 @@
       e.preventDefault();
       const href = profileLink.getAttribute('href');
       if (href) {
-        window.location.replace(href);
+        window.location.href = href;  // Changed from replace() to preserve history
       }
     }
   }
@@ -373,7 +491,7 @@
   function showTitleError(message) {
     if (elements.titleError) {
       elements.titleError.textContent = message;
-      elements.titleError.style.display = 'block';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
     }
     if (elements.titleInput) {
       elements.titleInput.classList.add('input-field__input--error');
@@ -383,7 +501,7 @@
   function clearTitleError() {
     if (elements.titleError) {
       elements.titleError.textContent = '';
-      elements.titleError.style.display = 'none';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
     }
     if (elements.titleInput) {
       elements.titleInput.classList.remove('input-field__input--error');
@@ -393,7 +511,7 @@
   function showContentError(message) {
     if (elements.contentError) {
       elements.contentError.textContent = message;
-      elements.contentError.style.display = 'block';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
     }
     if (elements.contentTextarea) {
       elements.contentTextarea.classList.add('input-field__textarea--error');
@@ -403,7 +521,7 @@
   function clearContentError() {
     if (elements.contentError) {
       elements.contentError.textContent = '';
-      elements.contentError.style.display = 'none';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
     }
     if (elements.contentTextarea) {
       elements.contentTextarea.classList.remove('input-field__textarea--error');
@@ -413,14 +531,14 @@
   function showImageError(message) {
     if (elements.imageError) {
       elements.imageError.textContent = translateErrorCode(message);
-      elements.imageError.style.display = 'block';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
     }
   }
 
   function clearImageError() {
     if (elements.imageError) {
       elements.imageError.textContent = '';
-      elements.imageError.style.display = 'none';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
     }
   }
 

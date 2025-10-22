@@ -9,7 +9,7 @@ app.use(express.static(path.join(__dirname, 'origin_source/static')));
 
 // 루트 경로 접속 시 로그인 페이지로 리다이렉트
 app.get('/', (req, res) => {
-  res.redirect('/pages/user/login.html');
+  res.redirect('/pages/home/index.html');
 });
 
 // 404 처리

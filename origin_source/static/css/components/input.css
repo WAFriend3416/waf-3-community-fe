@@ -119,7 +119,7 @@
   background-color: var(--color-bg-tertiary);
   border: var(--input-border-width) solid var(--color-border-default);
   border-radius: var(--input-radius);
-  resize: vertical;
+  resize: none;  /* 크기 조절 비활성화 */
   transition: var(--transition-colors);
   line-height: var(--line-height-relaxed);
 }

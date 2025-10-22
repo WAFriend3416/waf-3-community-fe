@@ -59,6 +59,7 @@
     }
 
     cacheElements();
+    cleanupInlineStyles();  // 인라인 스타일 정리
     bindEvents();
     loadUserProfile();  // 프로필 로드
     setupBackNavigation();  // 브라우저 뒤로가기 처리
@@ -79,6 +80,20 @@
     elements.titleError = document.querySelector('[data-error="title"]');
     elements.contentError = document.querySelector('[data-error="content"]');
     elements.imageError = document.querySelector('[data-error="image"]');
+  }
+
+  /**
+   * 오류 요소의 인라인 스타일 제거 (CSS가 제어하도록)
+   * 이전 실행으로 남아있을 수 있는 display 스타일 정리
+   */
+  function cleanupInlineStyles() {
+    const errorElements = [elements.titleError, elements.contentError, elements.imageError];
+    errorElements.forEach(el => {
+      if (el) {
+        el.style.display = '';  // 인라인 스타일 제거
+        el.textContent = '';     // 텍스트 초기화
+      }
+    });
   }
 
   function bindEvents() {
@@ -251,8 +266,9 @@
       });
 
       // 성공 - 토스트 메시지 후 상세 페이지로 이동
+      state.hasChanges = false;  // beforeunload 경고 건너뛰기
       Toast.success('게시글이 수정되었습니다.', '수정 완료', 1200, () => {
-        window.location.href = `${CONFIG.DETAIL_URL}?id=${state.postId}`;
+        window.location.replace(`${CONFIG.DETAIL_URL}?id=${state.postId}`);  // replace()로 history 중복 방지
       });
     } catch (error) {
       console.error('Failed to update post:', error);
@@ -348,7 +364,7 @@
       if (!confirmed) return;
       state.hasChanges = false;  // beforeunload 건너뛰기
     }
-    window.location.href = `${CONFIG.DETAIL_URL}?id=${state.postId}`;
+    window.location.replace(`${CONFIG.DETAIL_URL}?id=${state.postId}`);  // replace()로 history 중복 방지
   }
 
   async function handleCancel(e) {
@@ -361,7 +377,7 @@
       if (!confirmed) return;
       state.hasChanges = false;  // beforeunload 건너뛰기
     }
-    window.location.href = `${CONFIG.DETAIL_URL}?id=${state.postId}`;
+    window.location.replace(`${CONFIG.DETAIL_URL}?id=${state.postId}`);  // replace()로 history 중복 방지
   }
 
   function checkForChanges() {
@@ -407,22 +423,24 @@
 
     if (!title) {
       elements.titleError.textContent = '제목을 입력해주세요.';
-      elements.titleError.style.display = 'block';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
       isValid = false;
     } else if (title.length > CONFIG.MAX_TITLE_LENGTH) {
       elements.titleError.textContent = `제목은 ${CONFIG.MAX_TITLE_LENGTH}자 이하로 입력해주세요.`;
-      elements.titleError.style.display = 'block';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
       isValid = false;
     } else {
-      elements.titleError.style.display = 'none';
+      elements.titleError.textContent = '';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
     }
 
     if (!content) {
       elements.contentError.textContent = '내용을 입력해주세요.';
-      elements.contentError.style.display = 'block';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
       isValid = false;
     } else {
-      elements.contentError.style.display = 'none';
+      elements.contentError.textContent = '';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
     }
 
     return isValid;
@@ -431,15 +449,16 @@
   function validateImage(file) {
     if (file.size > CONFIG.MAX_FILE_SIZE) {
       elements.imageError.textContent = '이미지 파일 크기는 5MB 이하여야 합니다.';
-      elements.imageError.style.display = 'block';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
       return false;
     }
     if (!CONFIG.ALLOWED_FILE_TYPES.includes(file.type)) {
       elements.imageError.textContent = 'JPG, PNG, GIF 파일만 업로드 가능합니다.';
-      elements.imageError.style.display = 'block';
+      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
       return false;
     }
-    elements.imageError.style.display = 'none';
+    elements.imageError.textContent = '';
+    // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
     return true;
   }
 
