@@ -351,3 +351,64 @@
 body.modal-open {
   overflow: hidden;
 }
+
+/* ========================================
+   Simple Delete Modal (detail.html)
+   ======================================== */
+
+.modal[data-modal="delete-post"] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal[data-modal="delete-post"] .modal__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+}
+
+.modal[data-modal="delete-post"] .modal__content {
+  position: relative;
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  padding: var(--spacing-6);
+  max-width: 400px;
+  width: 90%;
+  z-index: 1;
+}
+
+.modal[data-modal="delete-post"] .modal__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-4);
+}
+
+.modal[data-modal="delete-post"] .modal__message {
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-6);
+  line-height: 1.6;
+}
+
+.modal[data-modal="delete-post"] .modal__actions {
+  display: flex;
+  gap: var(--spacing-3);
+  justify-content: flex-end;
+}
+
+.modal[data-modal="delete-post"] .modal__actions .btn {
+  flex: 1;
+}

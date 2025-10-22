@@ -11,7 +11,8 @@
     MAX_TITLE_LENGTH: 27,
     MAX_FILE_SIZE: 5 * 1024 * 1024,
     ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
-    DETAIL_URL: '/pages/board/detail.html'
+    DETAIL_URL: '/pages/board/detail.html',
+    LOGIN_URL: '/pages/user/login.html'
   };
 
   const state = {
@@ -32,6 +33,8 @@
     placeholder: null,
     removeImageButton: null,
     submitButton: null,
+    profileDropdown: null,
+    profileImage: null,
     titleError: null,
     contentError: null,
     imageError: null
@@ -41,9 +44,11 @@
     const urlParams = new URLSearchParams(window.location.search);
     state.postId = urlParams.get('id');
 
+    // postId 검증 (빠른 새로고침 대비)
     if (!state.postId) {
-      alert('게시글을 찾을 수 없습니다.');
-      window.history.back();
+      Toast.error('게시글을 찾을 수 없습니다.', '오류', 2000, () => {
+        window.history.back();
+      });
       return;
     }
 
@@ -61,6 +66,8 @@
     elements.placeholder = document.querySelector('[data-placeholder="image"]');
     elements.removeImageButton = document.querySelector('[data-action="remove-image"]');
     elements.submitButton = document.querySelector('[data-action="submit"]');
+    elements.profileDropdown = document.querySelector('[data-dropdown="profile"]');
+    elements.profileImage = document.querySelector('[data-profile="image"]');
     elements.titleError = document.querySelector('[data-error="title"]');
     elements.contentError = document.querySelector('[data-error="content"]');
     elements.imageError = document.querySelector('[data-error="image"]');
@@ -75,6 +82,9 @@
     }
     if (elements.removeImageButton) {
       elements.removeImageButton.addEventListener('click', handleRemoveImage);
+    }
+    if (elements.profileDropdown) {
+      elements.profileDropdown.addEventListener('click', handleProfileMenuClick);
     }
     document.querySelector('[data-action="go-back"]')?.addEventListener('click', e => {
       e.preventDefault();
@@ -100,17 +110,21 @@
       elements.contentTextarea.value = post.content;
 
       // 기존 이미지 표시
-      if (post.imageUrl) {
-        elements.previewImage.src = post.imageUrl;
+      if (post.images && post.images.length > 0) {
+        elements.previewImage.src = post.images[0];
         elements.previewImage.style.display = 'block';
         elements.placeholder.style.display = 'none';
         elements.removeImageButton.style.display = 'block';
-        state.uploadedImageId = post.imageId;
+        // imageId는 API 응답에 포함되어야 함 (백엔드 확인 필요)
+        if (post.imageId) {
+          state.uploadedImageId = post.imageId;
+        }
       }
     } catch (error) {
       console.error('Failed to load post:', error);
-      alert('게시글을 불러오는데 실패했습니다.');
-      window.history.back();
+      Toast.error('게시글을 불러오는데 실패했습니다.', '오류', 2000, () => {
+        window.history.back();
+      });
     }
   }
 
@@ -149,10 +163,14 @@
         body: JSON.stringify(body)
       });
 
-      window.location.href = `${CONFIG.DETAIL_URL}?id=${state.postId}`;
+      // 성공 - 토스트 메시지 후 상세 페이지로 이동
+      Toast.success('게시글이 수정되었습니다.', '수정 완료', 2000, () => {
+        window.location.href = `${CONFIG.DETAIL_URL}?id=${state.postId}`;
+      });
     } catch (error) {
       console.error('Failed to update post:', error);
-      alert(translateErrorCode(error.message) || '게시글 수정에 실패했습니다.');
+      const errorMessage = translateErrorCode(error.message) || '게시글 수정에 실패했습니다.';
+      Toast.error(errorMessage, '오류');
       state.isSubmitting = false;
       elements.submitButton.disabled = false;
       elements.submitButton.textContent = '수정완료';
@@ -191,6 +209,34 @@
     elements.placeholder.style.display = 'flex';
     elements.removeImageButton.style.display = 'none';
     elements.imageInput.value = '';
+  }
+
+  function handleProfileMenuClick(e) {
+    const logoutTarget = e.target.closest('[data-action="logout"]');
+    if (logoutTarget) {
+      e.preventDefault();
+      handleLogout();
+      return;
+    }
+
+    const profileLink = e.target.closest('[data-action="profile-link"]');
+    if (profileLink) {
+      e.preventDefault();
+      const href = profileLink.getAttribute('href');
+      if (href) {
+        window.location.replace(href);
+      }
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      window.location.replace(CONFIG.LOGIN_URL);
+    }
   }
 
   function validateForm() {

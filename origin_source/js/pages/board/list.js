@@ -109,7 +109,7 @@
 
     // 로그인 확인
     if (!isAuthenticated()) {
-      alert('로그인이 필요합니다.');
+      Toast.warning('로그인이 필요합니다.', '인증 필요');
       window.location.href = CONFIG.LOGIN_URL;
       return;
     }
@@ -136,7 +136,7 @@
   function handleProfileMenu(e) {
     e.preventDefault();
     // TODO: Phase 5에서 프로필 메뉴 구현
-    alert('프로필 메뉴는 추후 구현 예정입니다.');
+    Toast.info('프로필 메뉴는 추후 구현 예정입니다.', '알림');
   }
 
   // ============================================
@@ -302,7 +302,7 @@
   }
 
   function showError(message) {
-    alert(translateErrorCode(message));
+    Toast.error(translateErrorCode(message), '오류');
   }
 
   // ============================================
@@ -318,13 +318,14 @@
     }
 
     try {
-      // localStorage에서 userId 가져오기 (동기 함수)
       const userId = getCurrentUserId();
-      if (!userId) return;
 
-      // GET /users/{userId} 호출
-      // fetchWithAuth는 ApiResponse.data를 자동으로 반환
-      // 응답: { userId, email, nickname, profileImage }
+      // userId 검증 (null, undefined 체크)
+      if (!userId) {
+        console.warn('Invalid userId, skipping profile load');
+        return;
+      }
+
       const user = await fetchWithAuth(`/users/${userId}`);
 
       // 프로필 이미지 설정
@@ -342,20 +343,17 @@
 
   /**
    * 로그아웃 핸들러
-   * location.replace()를 사용하여 history에서 현재 페이지 제거
-   * → 뒤로가기 시 로그아웃한 페이지로 돌아가지 않음
    */
   async function handleLogout(event) {
     event.preventDefault();
 
     try {
       await logout();
-      // history에서 현재 페이지 제거 후 로그인 페이지로 이동
-      window.location.replace(CONFIG.LOGIN_URL);
+      window.location.href = CONFIG.LOGIN_URL;
     } catch (error) {
       console.error('Logout failed:', error);
       // 에러가 발생해도 로그인 페이지로 이동
-      window.location.replace(CONFIG.LOGIN_URL);
+      window.location.href = CONFIG.LOGIN_URL;
     }
   }
 

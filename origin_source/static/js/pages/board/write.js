@@ -15,7 +15,8 @@
     MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
     ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
     LIST_URL: '/pages/board/list.html',
-    DETAIL_URL: '/pages/board/detail.html'
+    DETAIL_URL: '/pages/board/detail.html',
+    LOGIN_URL: '/pages/user/login.html'
   };
 
   // ============================================
@@ -41,6 +42,8 @@
     backButton: null,
     cancelButton: null,
     submitButton: null,
+    profileDropdown: null,
+    profileImage: null,
 
     // Error elements
     titleError: null,
@@ -66,6 +69,8 @@
     elements.backButton = document.querySelector('[data-action="go-back"]');
     elements.cancelButton = document.querySelector('[data-action="cancel"]');
     elements.submitButton = document.querySelector('[data-action="submit"]');
+    elements.profileDropdown = document.querySelector('[data-dropdown="profile"]');
+    elements.profileImage = document.querySelector('[data-profile="image"]');
 
     // Error elements
     elements.titleError = document.querySelector('[data-error="title"]');
@@ -97,9 +102,16 @@
       elements.cancelButton.addEventListener('click', handleCancel);
     }
 
+    // Profile menu navigation
+    if (elements.profileDropdown) {
+      elements.profileDropdown.addEventListener('click', handleProfileMenuClick);
+    }
+
     // Real-time validation
     if (elements.titleInput) {
       elements.titleInput.addEventListener('input', validateTitle);
+      elements.titleInput.addEventListener('blur', handleTitleBlur);
+      elements.titleInput.addEventListener('keydown', handleTitleKeyDown);
     }
   }
 
@@ -148,12 +160,15 @@
         })
       });
 
-      // 성공 - 상세 페이지로 이동
-      window.location.href = `${CONFIG.DETAIL_URL}?id=${post.postId}`;
+      // 성공 - 토스트 메시지 후 상세 페이지로 이동
+      Toast.success('게시글이 작성되었습니다.', '작성 완료', 2000, () => {
+        window.location.replace(`${CONFIG.DETAIL_URL}?id=${post.postId}`);
+      });
 
     } catch (error) {
       console.error('Failed to create post:', error);
-      alert(translateErrorCode(error.message) || '게시글 작성에 실패했습니다.');
+      const errorMessage = translateErrorCode(error.message) || '게시글 작성에 실패했습니다.';
+      Toast.error(errorMessage, '오류');
       state.isSubmitting = false;
       setSubmitButtonState(false);
     }
@@ -189,6 +204,69 @@
     e.preventDefault();
     if (confirm('작성 중인 내용이 사라집니다. 취소하시겠습니까?')) {
       window.location.href = CONFIG.LIST_URL;
+    }
+  }
+
+  function handleTitleBlur() {
+    if (!elements.titleInput) return;
+    const title = elements.titleInput.value.trim();
+    if (!title) return;
+    focusContentTextarea();
+  }
+
+  function handleTitleKeyDown(e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+
+    if (!elements.titleInput) return;
+    const title = elements.titleInput.value.trim();
+    if (!title) return;
+
+    focusContentTextarea();
+  }
+
+  function focusContentTextarea() {
+    if (!elements.contentTextarea) return;
+
+    window.requestAnimationFrame(() => {
+      try {
+        elements.contentTextarea.focus({ preventScroll: true });
+      } catch (error) {
+        elements.contentTextarea.focus();
+      }
+
+      elements.contentTextarea.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    });
+  }
+
+  function handleProfileMenuClick(e) {
+    const logoutTarget = e.target.closest('[data-action="logout"]');
+    if (logoutTarget) {
+      e.preventDefault();
+      handleLogout();
+      return;
+    }
+
+    const profileLink = e.target.closest('[data-action="profile-link"]');
+    if (profileLink) {
+      e.preventDefault();
+      const href = profileLink.getAttribute('href');
+      if (href) {
+        window.location.replace(href);
+      }
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      window.location.replace(CONFIG.LOGIN_URL);
     }
   }
 

@@ -15,4 +15,4 @@
 .comments-section { background-color: var(--color-bg-secondary); border-radius: var(--radius-lg); padding: var(--spacing-8); }
 .comments-section__title { font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--color-text-primary); margin-bottom: var(--spacing-6); }
 .comment-form { display: flex; flex-direction: column; gap: var(--spacing-4); margin-bottom: var(--spacing-8); }
-.comment-form__textarea { width: 100%; padding: var(--spacing-4); background-color: var(--color-bg-tertiary); border: 1px solid var(--color-border-default); border-radius: var(--radius-base); color: var(--color-text-primary); font-size: var(--font-size-base); resize: vertical; min-height: 80px; }
+.comment-form__textarea { width: 100%; padding: var(--spacing-4); background-color: var(--color-bg-tertiary); border: 1px solid var(--color-border-default); border-radius: var(--radius-base); color: var(--color-text-primary); font-size: var(--font-size-base); resize: none; min-height: 80px; }

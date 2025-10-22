@@ -207,30 +207,11 @@ const PageConfig = {
 ```
 
 #### 3.3 재사용 함수 모듈화
-```javascript
-// common/utils.js - 공통 유틸리티
-const CommonUtils = {
-  // 날짜 포맷 (상대 시간)
-  formatDate(dateString) {
-    const diff = Math.floor((new Date() - new Date(dateString)) / 1000);
-    if (diff < 60) return '방금 전';
-    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-    // ...
-  },
 
-  // XSS 방지
-  escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  },
-
-  // HttpOnly Cookie 자동 전송
-  async fetchWithAuth(url, options = {}) {
-    return fetch(url, { credentials: 'include', ...options });
-  }
-};
-```
+**공통 유틸리티**: `origin_source/static/js/common/utils.js`
+- formatDate(): 상대 시간 변환
+- escapeHtml(): XSS 방지
+- fetchWithAuth(): HttpOnly Cookie 자동 전송
 
 **참조**: `origin_source/static/js/common/utils.js` (전체 구현)
 
@@ -286,26 +267,12 @@ function updateUserName() {
 
 ### 현재 프로젝트 구조
 
-**참조**: [CLAUDE.md - 디렉토리 구조](../../CLAUDE.md#디렉토리-구조) (전체 프로젝트 구조)
+**전체 디렉토리 구조**: [CLAUDE.md Section 3.1](../../CLAUDE.md#디렉토리-구조)
 
-```
-ktb_community_fe/
-├── server.js              # Express 정적 파일 서버
-├── package.json           # 프로젝트 설정
-└── origin_source/
-    └── static/
-        ├── css/
-        │   ├── common/    # reset, layout, variables, typography
-        │   ├── components/  # button, card, header, modal 등
-        │   └── pages/     # 페이지별 스타일 (board/, user/)
-        ├── js/
-        │   ├── common/    # api, utils, validation
-        │   └── pages/     # 페이지별 로직 (board/, user/)
-        └── pages/
-            ├── board/     # 게시글 HTML 페이지
-            ├── user/      # 사용자 HTML 페이지
-            └── fragments/ # 재사용 HTML 조각
-```
+**핵심 구조**:
+- `css/`: common, components, pages
+- `js/`: common (공유), pages (페이지별)
+- `pages/`: board, user, fragments
 
 ### JavaScript 파일 구조 템플릿
 ```javascript

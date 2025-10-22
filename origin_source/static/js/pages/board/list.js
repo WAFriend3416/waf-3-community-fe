@@ -37,7 +37,7 @@
     loadMoreButton: null,
     loadMoreContainer: null,
     profileImage: null,
-    logoutButton: null
+    profileDropdown: null
   };
 
   // ============================================
@@ -57,7 +57,7 @@
     elements.loadMoreButton = document.querySelector('[data-action="load-more"]');
     elements.loadMoreContainer = document.querySelector('.load-more-container');
     elements.profileImage = document.querySelector('[data-profile="image"]');
-    elements.logoutButton = document.querySelector('[data-action="logout"]');
+    elements.profileDropdown = document.querySelector('[data-dropdown="profile"]');
   }
 
   // ============================================
@@ -79,9 +79,9 @@
       elements.postList.addEventListener('click', handlePostClick);
     }
 
-    // 로그아웃 버튼
-    if (elements.logoutButton) {
-      elements.logoutButton.addEventListener('click', handleLogout);
+    // 프로필 메뉴
+    if (elements.profileDropdown) {
+      elements.profileDropdown.addEventListener('click', handleProfileMenuClick);
     }
   }
 
@@ -109,8 +109,9 @@
 
     // 로그인 확인
     if (!isAuthenticated()) {
-      alert('로그인이 필요합니다.');
-      window.location.href = CONFIG.LOGIN_URL;
+      Toast.error('로그인이 필요합니다.', '인증 필요', 2000, () => {
+        window.location.replace(CONFIG.LOGIN_URL);
+      });
       return;
     }
 
@@ -133,10 +134,22 @@
     }
   }
 
-  function handleProfileMenu(e) {
-    e.preventDefault();
-    // TODO: Phase 5에서 프로필 메뉴 구현
-    alert('프로필 메뉴는 추후 구현 예정입니다.');
+  function handleProfileMenuClick(e) {
+    const logoutTarget = e.target.closest('[data-action="logout"]');
+    if (logoutTarget) {
+      e.preventDefault();
+      handleLogout();
+      return;
+    }
+
+    const profileLink = e.target.closest('[data-action="profile-link"], a.profile-menu__item');
+    if (profileLink && profileLink.tagName === 'A') {
+      e.preventDefault();
+      const href = profileLink.getAttribute('href');
+      if (href) {
+        window.location.replace(href);
+      }
+    }
   }
 
   // ============================================
@@ -302,24 +315,40 @@
   }
 
   function showError(message) {
-    alert(translateErrorCode(message));
+    Toast.error(translateErrorCode(message), '오류');
   }
 
   // ============================================
   // User Profile
   // ============================================
   async function loadUserProfile() {
+    const profileMenu = document.querySelector('[data-auth="authenticated"]');
+    const guestAuth = document.querySelector('[data-auth="guest"]');
+
     if (!isAuthenticated()) {
-      // 비로그인 상태 - 기본 이미지 표시
+      // 비로그인: 로그인/회원가입 버튼 표시
+      if (profileMenu) profileMenu.style.display = 'none';
+      if (guestAuth) guestAuth.style.display = 'flex';
+
+      // 기본 이미지 (필요 시)
       if (elements.profileImage) {
         elements.profileImage.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=anonymous';
       }
       return;
     }
 
+    // 로그인: 프로필 메뉴 표시
+    if (profileMenu) profileMenu.style.display = 'flex';
+    if (guestAuth) guestAuth.style.display = 'none';
+
     try {
       const userId = getCurrentUserId();
-      if (!userId) return;
+
+      // userId 검증 (null, undefined 체크)
+      if (!userId) {
+        console.warn('Invalid userId, skipping profile load');
+        return;
+      }
 
       const user = await fetchWithAuth(`/users/${userId}`);
 
@@ -339,16 +368,13 @@
   /**
    * 로그아웃 핸들러
    */
-  async function handleLogout(event) {
-    event.preventDefault();
-
+  async function handleLogout() {
     try {
       await logout();
-      window.location.href = CONFIG.LOGIN_URL;
     } catch (error) {
       console.error('Logout failed:', error);
-      // 에러가 발생해도 로그인 페이지로 이동
-      window.location.href = CONFIG.LOGIN_URL;
+    } finally {
+      window.location.replace(CONFIG.LOGIN_URL);
     }
   }
 

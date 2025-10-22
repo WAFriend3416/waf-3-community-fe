@@ -58,7 +58,7 @@
     backButton: null,
     editPostButton: null,
     deletePostButton: null,
-    profileButton: null,
+    profileDropdown: null,
     profileImage: null
   };
 
@@ -71,8 +71,9 @@
     state.postId = urlParams.get('id');
 
     if (!state.postId) {
-      alert('게시글을 찾을 수 없습니다.');
-      window.location.href = CONFIG.LIST_URL;
+      Toast.error('게시글을 찾을 수 없습니다.', '오류', 2000, () => {
+        window.location.replace(CONFIG.LIST_URL);
+      });
       return;
     }
 
@@ -111,7 +112,7 @@
     elements.backButton = document.querySelector('[data-action="go-back"]');
     elements.editPostButton = document.querySelector('[data-action="edit-post"]');
     elements.deletePostButton = document.querySelector('[data-action="delete-post"]');
-    elements.profileButton = document.querySelector('[data-action="toggle-menu"]');
+    elements.profileDropdown = document.querySelector('[data-dropdown="profile"]');
     elements.profileImage = document.querySelector('[data-profile="image"]');
   }
 
@@ -161,8 +162,8 @@
     }
 
     // Profile menu
-    if (elements.profileButton) {
-      elements.profileButton.addEventListener('click', handleProfileMenu);
+    if (elements.profileDropdown) {
+      elements.profileDropdown.addEventListener('click', handleProfileMenuClick);
     }
   }
 
@@ -170,6 +171,14 @@
   // Initial Data Load
   // ============================================
   async function loadInitialData() {
+    // postId 검증 (빠른 새로고침 대비)
+    if (!state.postId) {
+      Toast.error('게시글을 찾을 수 없습니다.', '오류', 2000, () => {
+        window.location.replace(CONFIG.LIST_URL);
+      });
+      return;
+    }
+
     await loadPost();
     await loadComments();
     loadUserProfile();
@@ -188,8 +197,9 @@
 
     // 로그인 확인
     if (!isAuthenticated()) {
-      alert('로그인이 필요합니다.');
-      window.location.href = CONFIG.LOGIN_URL;
+      Toast.error('로그인이 필요합니다.', '인증 필요', 2000, () => {
+        window.location.replace(CONFIG.LOGIN_URL);
+      });
       return;
     }
 
@@ -244,8 +254,9 @@
 
     // 로그인 확인
     if (!isAuthenticated()) {
-      alert('로그인이 필요합니다.');
-      window.location.href = CONFIG.LOGIN_URL;
+      Toast.error('로그인이 필요합니다.', '인증 필요', 2000, () => {
+        window.location.replace(CONFIG.LOGIN_URL);
+      });
       return;
     }
 
@@ -253,12 +264,12 @@
 
     // 클라이언트 검증 (200자 제한)
     if (!content) {
-      alert('댓글 내용을 입력해주세요.');
+      Toast.error('댓글 내용을 입력해주세요.', '입력 오류');
       return;
     }
 
     if (content.length > 200) {
-      alert('댓글은 200자 이하로 입력해주세요.');
+      Toast.error('댓글은 200자 이하로 입력해주세요.', '입력 오류');
       return;
     }
 
@@ -351,10 +362,32 @@
     }
   }
 
-  function handleProfileMenu(e) {
-    e.preventDefault();
-    // TODO: Phase 5에서 프로필 메뉴 구현
-    alert('프로필 메뉴는 추후 구현 예정입니다.');
+  function handleProfileMenuClick(e) {
+    const logoutTarget = e.target.closest('[data-action="logout"]');
+    if (logoutTarget) {
+      e.preventDefault();
+      handleLogout();
+      return;
+    }
+
+    const profileLink = e.target.closest('[data-action="profile-link"]');
+    if (profileLink) {
+      e.preventDefault();
+      const href = profileLink.getAttribute('href');
+      if (href) {
+        window.location.replace(href);
+      }
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      window.location.replace(CONFIG.LOGIN_URL);
+    }
   }
 
   // ============================================
@@ -372,17 +405,22 @@
       // 게시글 렌더링
       renderPost(post);
 
-      // 본인 게시글이면 수정/삭제 버튼 표시
+      // 본인 게시글이면 수정/삭제 버튼 표시, 좋아요 버튼 숨김
       if (state.currentUserId && post.author.userId === state.currentUserId) {
         if (elements.postActions) {
           elements.postActions.style.display = 'flex';
+        }
+        // 본인 글에는 좋아요 불가
+        if (elements.likeButton) {
+          elements.likeButton.style.display = 'none';
         }
       }
 
     } catch (error) {
       console.error('Failed to load post:', error);
-      alert('게시글을 찾을 수 없습니다.');
-      window.location.href = CONFIG.LIST_URL;
+      Toast.error('게시글을 찾을 수 없습니다.', '오류', 2000, () => {
+        window.location.replace(CONFIG.LIST_URL);
+      });
     }
   }
 
@@ -413,6 +451,18 @@
 
     } catch (error) {
       console.error('Failed to load comments:', error);
+
+      // 404 에러: 게시글이 삭제되었을 가능성
+      if (error.message.includes('POST-001') || error.message.includes('404')) {
+        console.warn('Post not found, redirecting to list');
+        Toast.error('게시글을 찾을 수 없습니다.', '오류', 2000, () => {
+          window.location.replace(CONFIG.LIST_URL);
+        });
+        return;
+      }
+
+      // 기타 에러: 댓글만 빈 상태로 표시
+      showEmptyComments();
     }
   }
 
@@ -426,8 +476,9 @@
       });
 
       closeDeleteModal();
-      alert('게시글이 삭제되었습니다.');
-      window.location.href = CONFIG.LIST_URL;
+      Toast.success('게시글이 삭제되었습니다.', '삭제 완료', 2000, () => {
+        window.location.replace(CONFIG.LIST_URL);
+      });
 
     } catch (error) {
       console.error('Failed to delete post:', error);
@@ -670,16 +721,33 @@
   // User Profile
   // ============================================
   async function loadUserProfile() {
+    const profileMenu = document.querySelector('[data-auth="authenticated"]');
+    const guestAuth = document.querySelector('[data-auth="guest"]');
+
     if (!isAuthenticated()) {
+      // 비로그인: 로그인/회원가입 버튼 표시
+      if (profileMenu) profileMenu.style.display = 'none';
+      if (guestAuth) guestAuth.style.display = 'flex';
+
+      // 기본 이미지 (필요 시)
       if (elements.profileImage) {
         elements.profileImage.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=anonymous';
       }
       return;
     }
 
+    // 로그인: 프로필 메뉴 표시
+    if (profileMenu) profileMenu.style.display = 'flex';
+    if (guestAuth) guestAuth.style.display = 'none';
+
     try {
       const userId = getCurrentUserId();
-      if (!userId) return;
+
+      // userId 검증 (null, undefined 체크)
+      if (!userId) {
+        console.warn('Invalid userId, skipping profile load');
+        return;
+      }
 
       const user = await fetchWithAuth(`/users/${userId}`);
 

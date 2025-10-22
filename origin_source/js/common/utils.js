@@ -73,22 +73,22 @@ function formatNumberCompact(num) {
 
 /**
  * 에러 메시지 표시
- * 현재: alert (추후 모달/토스트로 개선)
+ * Toast로 에러 메시지 표시
  *
  * @param {string} message
  */
 function showError(message) {
-    alert(message); // TODO: 모달 또는 토스트로 개선
+    Toast.error(message, '오류');
 }
 
 /**
  * 성공 메시지 표시
- * 현재: alert (추후 모달/토스트로 개선)
+ * Toast로 성공 메시지 표시
  *
  * @param {string} message
  */
 function showSuccess(message) {
-    alert(message); // TODO: 모달 또는 토스트로 개선
+    Toast.success(message, '성공');
 }
 
 /**

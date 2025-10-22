@@ -54,6 +54,8 @@
 .input-field__helper {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
+  min-height: 1.2em;  /* 항상 공간 확보 */
+  display: block;     /* 항상 블록 요소로 표시 */
 }
 
 /* Error State */
@@ -64,6 +66,13 @@
 .input-field__error {
   font-size: var(--font-size-xs);
   color: var(--color-error);
+  min-height: 1.2em;  /* 항상 공간 확보 */
+  display: block;     /* 항상 블록 요소로 표시 */
+  visibility: hidden; /* 기본적으로 보이지 않게 */
+}
+
+.input-field__error:not(:empty) {
+  visibility: visible; /* 텍스트가 있을 때만 보이게 */
 }
 
 /* Success State */
@@ -282,7 +291,7 @@
 
 .password-strength__bar {
   height: 4px;
-  width: 100%;
+  width: 0;
   background-color: var(--color-bg-elevated);
   border-radius: var(--radius-base);
   overflow: hidden;

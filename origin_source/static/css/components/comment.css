@@ -52,7 +52,7 @@
   color: var(--color-text-primary);
   font-size: var(--font-size-sm);
   font-family: inherit;
-  resize: vertical;
+  resize: none;
   transition: all var(--transition-fast);
 }
 

@@ -76,9 +76,6 @@ const posts = await fetch('http://localhost:8080/posts', {
 
 ### 1.4 응답 구조
 
-**성공**: `{ message, data, timestamp }` 형식
-**실패**: `message` 필드에 에러 코드 반환 (예: `"AUTH-001"`)
-
 **참조**: [API.md Section 7 - 표준 응답 형식](../be/API.md#표준-응답-형식) ⭐ **응답 구조 SSOT**
 
 ---
@@ -103,63 +100,14 @@ const posts = await fetch('http://localhost:8080/posts', {
 
 ### 2.2 토큰 갱신 자동화
 
-`origin_source/static/js/common/api.js`에 구현된 `fetchWithAuth()` 수정 필요:
+**구현 위치**: `origin_source/static/js/common/api.js::fetchWithAuth()`
 
-```javascript
-// origin_source/static/js/common/api.js
-async function fetchWithAuth(url, options = {}) {
-  const config = {
-    ...options,
-    credentials: 'include',  // ✅ Cookie 자동 전송
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers
-      // Authorization 헤더 제거
-    }
-  };
+**핵심 패턴**:
+- 401 에러 → refreshAccessToken() 호출
+- 갱신 성공 → 요청 재시도 (credentials: 'include')
+- 갱신 실패 → 로그인 페이지 리디렉션
 
-  try {
-    const response = await fetch(`${API_BASE_URL}${url}`, config);
-
-    // 401 Unauthorized → 토큰 갱신 후 재시도
-    if (response.status === 401) {
-      const refreshed = await refreshAccessToken();
-      if (refreshed) {
-        // 재시도 (Cookie는 자동 전송됨)
-        return fetch(`${API_BASE_URL}${url}`, config);
-      } else {
-        // 갱신 실패 → 로그인 페이지로
-        window.location.href = '/pages/user/login.html';
-        throw new Error('Authentication failed');
-      }
-    }
-
-    return handleResponse(response);
-  } catch (error) {
-    console.error('API Error:', error);
-    throw error;
-  }
-}
-
-// 토큰 갱신 (POST /auth/refresh_token)
-async function refreshAccessToken() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh_token`, {
-      method: 'POST',
-      credentials: 'include'  // refresh_token Cookie 전송
-    });
-
-    if (response.ok) {
-      // 서버가 새 access_token Cookie 설정
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('Token refresh failed:', error);
-    return false;
-  }
-}
-```
+**참조**: [API.md Section 1.3](../be/API.md#13-액세스-토큰-재발급) (엔드포인트 명세)
 
 ### 2.3 주요 API
 
@@ -310,10 +258,7 @@ const maxSize = 5 * 1024 * 1024;
 
 ### 6.1 에러 코드
 
-**형식**: `{DOMAIN}-{NUMBER}` (예: AUTH-001, USER-002, POST-001)
-**총 28개**: AUTH(4), USER(7), POST(4), COMMENT(3), LIKE(2), IMAGE(3), COMMON(5)
-
-**참조**: [API.md Section 7 - 에러 코드](../be/API.md#응답-코드) ⭐ **에러 코드 SSOT** (전체 28개 + 처리 방법)
+**참조**: [API.md Section 7 - 에러 코드](../be/API.md#응답-코드) ⭐ **에러 코드 SSOT** (총 28개, 형식: `{DOMAIN}-{NUMBER}`)
 
 ### 6.2 에러 핸들러 구현
 

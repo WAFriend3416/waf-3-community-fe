@@ -71,7 +71,7 @@
     state.postId = urlParams.get('id');
 
     if (!state.postId) {
-      alert('게시글을 찾을 수 없습니다.');
+      Toast.error('게시글을 찾을 수 없습니다.', '오류');
       window.location.href = CONFIG.LIST_URL;
       return;
     }
@@ -160,9 +160,21 @@
       }
     }
 
-    // Profile menu
-    if (elements.profileButton) {
-      elements.profileButton.addEventListener('click', handleProfileMenu);
+    // Profile menu links - location.replace로 히스토리 관리
+    document.querySelectorAll('[data-action="profile-link"]').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const href = this.getAttribute('href');
+        if (href) {
+          window.location.replace(href);  // 히스토리 스택 교체
+        }
+      });
+    });
+
+    // Logout button
+    const logoutButton = document.querySelector('[data-action="logout"]');
+    if (logoutButton) {
+      logoutButton.addEventListener('click', handleLogout);
     }
   }
 
@@ -170,6 +182,13 @@
   // Initial Data Load
   // ============================================
   async function loadInitialData() {
+    // postId 검증 (빠른 새로고침 대비)
+    if (!state.postId) {
+      Toast.error('게시글을 찾을 수 없습니다.', '오류');
+      window.location.href = CONFIG.LIST_URL;
+      return;
+    }
+
     await loadPost();
     await loadComments();
     loadUserProfile();
@@ -188,7 +207,7 @@
 
     // 로그인 확인
     if (!isAuthenticated()) {
-      alert('로그인이 필요합니다.');
+      Toast.warning('로그인이 필요합니다.', '인증 필요');
       window.location.href = CONFIG.LOGIN_URL;
       return;
     }
@@ -244,7 +263,7 @@
 
     // 로그인 확인
     if (!isAuthenticated()) {
-      alert('로그인이 필요합니다.');
+      Toast.warning('로그인이 필요합니다.', '인증 필요');
       window.location.href = CONFIG.LOGIN_URL;
       return;
     }
@@ -253,12 +272,12 @@
 
     // 클라이언트 검증 (200자 제한)
     if (!content) {
-      alert('댓글 내용을 입력해주세요.');
+      Toast.warning('댓글 내용을 입력해주세요.', '입력 확인');
       return;
     }
 
     if (content.length > 200) {
-      alert('댓글은 200자 이하로 입력해주세요.');
+      Toast.warning('댓글은 200자 이하로 입력해주세요.', '입력 제한');
       return;
     }
 
@@ -351,10 +370,15 @@
     }
   }
 
-  function handleProfileMenu(e) {
+  async function handleLogout(e) {
     e.preventDefault();
-    // TODO: Phase 5에서 프로필 메뉴 구현
-    alert('프로필 메뉴는 추후 구현 예정입니다.');
+    try {
+      await fetchWithAuth('/auth/logout', { method: 'POST' });
+      localStorage.removeItem('userId');
+      window.location.replace('/pages/user/login.html');
+    } catch (error) {
+      Toast.error('로그아웃 실패', '오류');
+    }
   }
 
   // ============================================
@@ -372,16 +396,20 @@
       // 게시글 렌더링
       renderPost(post);
 
-      // 본인 게시글이면 수정/삭제 버튼 표시
+      // 본인 게시글이면 수정/삭제 버튼 표시, 좋아요 버튼 숨김
       if (state.currentUserId && post.author.userId === state.currentUserId) {
         if (elements.postActions) {
           elements.postActions.style.display = 'flex';
+        }
+        // 본인 글에는 좋아요 불가
+        if (elements.likeButton) {
+          elements.likeButton.style.display = 'none';
         }
       }
 
     } catch (error) {
       console.error('Failed to load post:', error);
-      alert('게시글을 찾을 수 없습니다.');
+      Toast.error('게시글을 찾을 수 없습니다.', '오류');
       window.location.href = CONFIG.LIST_URL;
     }
   }
@@ -413,6 +441,17 @@
 
     } catch (error) {
       console.error('Failed to load comments:', error);
+
+      // 404 에러: 게시글이 삭제되었을 가능성
+      if (error.message.includes('POST-001') || error.message.includes('404')) {
+        console.warn('Post not found, redirecting to list');
+        Toast.error('게시글을 찾을 수 없습니다.', '오류');
+        window.location.href = CONFIG.LIST_URL;
+        return;
+      }
+
+      // 기타 에러: 댓글만 빈 상태로 표시
+      showEmptyComments();
     }
   }
 
@@ -426,7 +465,7 @@
       });
 
       closeDeleteModal();
-      alert('게시글이 삭제되었습니다.');
+      Toast.success('게시글이 삭제되었습니다.', '삭제 완료');
       window.location.href = CONFIG.LIST_URL;
 
     } catch (error) {
@@ -679,7 +718,12 @@
 
     try {
       const userId = getCurrentUserId();
-      if (!userId) return;
+
+      // userId 검증 (null, undefined 체크)
+      if (!userId) {
+        console.warn('Invalid userId, skipping profile load');
+        return;
+      }
 
       const user = await fetchWithAuth(`/users/${userId}`);
 

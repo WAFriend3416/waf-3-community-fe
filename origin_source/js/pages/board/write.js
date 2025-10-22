@@ -97,6 +97,23 @@
       elements.cancelButton.addEventListener('click', handleCancel);
     }
 
+    // Profile menu links - location.replace로 히스토리 관리
+    document.querySelectorAll('[data-action="profile-link"]').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const href = this.getAttribute('href');
+        if (href) {
+          window.location.replace(href);  // 히스토리 스택 교체
+        }
+      });
+    });
+
+    // Logout button
+    const logoutButton = document.querySelector('[data-action="logout"]');
+    if (logoutButton) {
+      logoutButton.addEventListener('click', handleLogout);
+    }
+
     // Real-time validation
     if (elements.titleInput) {
       elements.titleInput.addEventListener('input', validateTitle);
@@ -148,8 +165,8 @@
         })
       });
 
-      // 성공 - 상세 페이지로 이동
-      window.location.href = `${CONFIG.DETAIL_URL}?id=${post.postId}`;
+      // 성공 - 상세 페이지로 이동 (replace로 히스토리 남기지 않음)
+      window.location.replace(`${CONFIG.DETAIL_URL}?id=${post.postId}`);
 
     } catch (error) {
       console.error('Failed to create post:', error);
@@ -189,6 +206,17 @@
     e.preventDefault();
     if (confirm('작성 중인 내용이 사라집니다. 취소하시겠습니까?')) {
       window.location.href = CONFIG.LIST_URL;
+    }
+  }
+
+  async function handleLogout(e) {
+    e.preventDefault();
+    try {
+      await fetchWithAuth('/auth/logout', { method: 'POST' });
+      localStorage.removeItem('userId');
+      window.location.replace('/pages/user/login.html');
+    } catch (error) {
+      Toast.error('로그아웃 실패', '오류');
     }
   }
 

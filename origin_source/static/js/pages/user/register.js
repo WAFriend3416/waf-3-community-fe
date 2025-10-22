@@ -44,9 +44,6 @@
         // Password toggle (비밀번호 표시/숨김)
         passwordToggle: null,
         passwordConfirmToggle: null,
-        // Password strength (비밀번호 강도)
-        passwordStrengthBar: null,
-        passwordStrengthText: null,
         // Error elements
         profileImageError: null,
         emailError: null,
@@ -86,10 +83,6 @@
         elements.passwordToggle = document.querySelector('[data-action="toggle-password"]');
         elements.passwordConfirmToggle = document.querySelector('[data-action="toggle-password-confirm"]');
 
-        // Password strength
-        elements.passwordStrengthBar = document.querySelector('[data-strength="bar"]');
-        elements.passwordStrengthText = document.querySelector('[data-strength="text"]');
-
         // Error elements
         elements.profileImageError = document.querySelector('[data-error="profileImage"]');
         elements.emailError = document.querySelector('[data-error="email"]');
@@ -111,9 +104,6 @@
         elements.passwordInput.addEventListener('blur', () => validateField('password'));
         elements.passwordConfirmInput.addEventListener('blur', () => validateField('passwordConfirm'));
         elements.nicknameInput.addEventListener('blur', () => validateField('nickname'));
-
-        // 비밀번호 강도 표시 (input 이벤트)
-        elements.passwordInput.addEventListener('input', handlePasswordStrength);
 
         // 비밀번호 토글 버튼
         if (elements.passwordToggle) {
@@ -202,9 +192,15 @@
             const data = await response.json();
 
             if (response.ok) {
-                // 회원가입 성공 - 로그인 페이지로 이동
-                alert('회원가입이 완료되었습니다. 로그인해주세요.');
-                window.location.href = CONFIG.LOGIN_URL;
+                // userId만 localStorage에 저장 (토큰은 Cookie)
+                if (data.data && data.data.userId) {
+                    localStorage.setItem('userId', data.data.userId);
+                }
+
+                // 회원가입 성공 - 자동 로그인되어 게시글 목록으로 이동
+                Toast.success('회원가입이 완료되었습니다.', '환영합니다', 2000, () => {
+                    window.location.href = CONFIG.LIST_URL;
+                });
             } else {
                 throw new Error(data.message);
             }
@@ -406,32 +402,6 @@
 
         if (inputElement && field !== 'profileImage') {
             inputElement.classList.remove('input-field__input--error');
-        }
-    }
-
-    /**
-     * 비밀번호 강도 표시 핸들러
-     * input 이벤트로 실시간 업데이트
-     */
-    function handlePasswordStrength() {
-        const password = elements.passwordInput.value;
-
-        // 강도 계산
-        const { strength, percentage } = getPasswordStrength(password);
-
-        // 강도 바 업데이트
-        if (elements.passwordStrengthBar) {
-            elements.passwordStrengthBar.style.width = `${percentage}%`;
-            elements.passwordStrengthBar.className = 'password-strength__bar';
-            elements.passwordStrengthBar.classList.add(`password-strength__bar--${strength}`);
-        }
-
-        // 강도 텍스트 업데이트
-        if (elements.passwordStrengthText) {
-            const message = getPasswordStrengthMessage(strength);
-            elements.passwordStrengthText.textContent = message;
-            elements.passwordStrengthText.className = 'password-strength__text';
-            elements.passwordStrengthText.classList.add(`password-strength__text--${strength}`);
         }
     }
 

@@ -41,8 +41,9 @@
     const urlParams = new URLSearchParams(window.location.search);
     state.postId = urlParams.get('id');
 
+    // postId 검증 (빠른 새로고침 대비)
     if (!state.postId) {
-      alert('게시글을 찾을 수 없습니다.');
+      Toast.error('게시글을 찾을 수 없습니다.', '오류');
       window.history.back();
       return;
     }
@@ -100,16 +101,19 @@
       elements.contentTextarea.value = post.content;
 
       // 기존 이미지 표시
-      if (post.imageUrl) {
-        elements.previewImage.src = post.imageUrl;
+      if (post.images && post.images.length > 0) {
+        elements.previewImage.src = post.images[0];
         elements.previewImage.style.display = 'block';
         elements.placeholder.style.display = 'none';
         elements.removeImageButton.style.display = 'block';
-        state.uploadedImageId = post.imageId;
+        // imageId는 API 응답에 포함되어야 함 (백엔드 확인 필요)
+        if (post.imageId) {
+          state.uploadedImageId = post.imageId;
+        }
       }
     } catch (error) {
       console.error('Failed to load post:', error);
-      alert('게시글을 불러오는데 실패했습니다.');
+      Toast.error('게시글을 불러오는데 실패했습니다.', '오류');
       window.history.back();
     }
   }
@@ -152,7 +156,7 @@
       window.location.href = `${CONFIG.DETAIL_URL}?id=${state.postId}`;
     } catch (error) {
       console.error('Failed to update post:', error);
-      alert(translateErrorCode(error.message) || '게시글 수정에 실패했습니다.');
+      Toast.error(translateErrorCode(error.message) || '게시글 수정에 실패했습니다.', '오류');
       state.isSubmitting = false;
       elements.submitButton.disabled = false;
       elements.submitButton.textContent = '수정완료';

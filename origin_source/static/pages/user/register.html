@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/css/components/input.css">
   <link rel="stylesheet" href="/css/components/header.css">
   <link rel="stylesheet" href="/css/components/form-footer.css">
+  <link rel="stylesheet" href="/static/css/components/toast.css">
 
   <!-- Page Styles -->
   <link rel="stylesheet" href="/css/pages/user/register.css">
@@ -120,11 +121,6 @@
             </div>
             <span class="input-field__helper" data-helper="password">* 8-20자, 영문, 숫자, 특수문자 포함</span>
             <span class="input-field__error" data-error="password"></span>
-            <!-- Password Strength Indicator -->
-            <div class="password-strength">
-              <div class="password-strength__bar" data-strength="bar"></div>
-              <span class="password-strength__text" data-strength="text"></span>
-            </div>
           </div>
 
           <!-- Password Confirmation Field -->
@@ -198,6 +194,7 @@
   </main>
 
   <!-- Common Scripts -->
+  <script src="/static/js/common/toast.js"></script>
   <script src="/js/common/api.js"></script>
   <script src="/js/common/validation.js"></script>
   <script src="/js/common/utils.js"></script>

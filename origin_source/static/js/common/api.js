@@ -12,6 +12,7 @@ const API_BASE_URL = 'http://localhost:8080';
 /**
  * HttpOnly Cookie 기반 Fetch 래퍼
  * - Cookie 자동 전송 (credentials: 'include')
+ * - CSRF 토큰 자동 추가 (POST/PATCH/DELETE)
  * - 401 Unauthorized 시 자동 토큰 갱신 및 재시도
  * - ApiResponse 형식 처리 (data 필드 자동 추출)
  *
@@ -20,11 +21,14 @@ const API_BASE_URL = 'http://localhost:8080';
  * @returns {Promise<any>} - ApiResponse.data 또는 { success: true }
  */
 async function fetchWithAuth(url, options = {}) {
+    const csrfToken = getCsrfToken();
+
     const config = {
         ...options,
         credentials: 'include',  // HttpOnly Cookie 자동 전송
         headers: {
             'Content-Type': 'application/json',
+            ...(csrfToken && { 'X-XSRF-TOKEN': csrfToken }),  // CSRF 토큰 추가
             ...options.headers
         }
     };
@@ -95,30 +99,52 @@ async function handleResponse(response) {
     throw new Error(data.message || 'API request failed');
 }
 
+// 토큰 갱신 Promise 캐시 (동시 호출 방지)
+let refreshTokenPromise = null;
+
 /**
  * Access Token 갱신
  * POST /auth/refresh_token 호출
  * - refresh_token은 HttpOnly Cookie로 자동 전송
+ * - 동시 호출 방지: 여러 요청이 동시에 갱신을 시도해도 한 번만 실행
  *
  * @returns {Promise<boolean>} 갱신 성공 여부
  */
 async function refreshAccessToken() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/auth/refresh_token`, {
-            method: 'POST',
-            credentials: 'include',  // refresh_token Cookie 자동 전송
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (response.ok) {
-            // 서버가 새 access_token Cookie 설정
-            return true;
-        }
-        return false;
-    } catch (error) {
-        console.error('Token refresh failed:', error);
-        return false;
+    // 이미 갱신 중이면 기존 Promise 반환 (중복 호출 방지)
+    if (refreshTokenPromise) {
+        return refreshTokenPromise;
     }
+
+    // 새로운 갱신 시작
+    refreshTokenPromise = (async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/refresh_token`, {
+                method: 'POST',
+                credentials: 'include',  // refresh_token Cookie 자동 전송
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                // userId를 localStorage에 저장 (동기화)
+                if (data.data && data.data.userId) {
+                    localStorage.setItem('userId', data.data.userId);
+                }
+                // 서버가 새 access_token Cookie 설정
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Token refresh failed:', error);
+            return false;
+        } finally {
+            // 갱신 완료 후 캐시 초기화 (다음 갱신을 위해)
+            refreshTokenPromise = null;
+        }
+    })();
+
+    return refreshTokenPromise;
 }
 
 /**
@@ -138,6 +164,9 @@ async function logout() {
         console.error('Logout request failed:', error);
     }
 
+    // localStorage에서 userId 삭제
+    localStorage.removeItem('userId');
+
     // 서버가 Cookie 삭제 처리 (MaxAge=0)
 }
 
@@ -145,32 +174,40 @@ async function logout() {
  * 로그인 여부 확인
  *
  * HttpOnly Cookie는 JavaScript에서 접근 불가하므로
- * 실제 로그인 상태는 서버 API 호출로만 확인 가능
+ * localStorage의 userId 존재 여부로 로그인 상태 판단
  *
- * @returns {boolean} - 항상 true 반환 (실제 인증은 서버에서 검증)
+ * @returns {boolean} - userId가 있으면 true, 없으면 false
  */
 function isAuthenticated() {
-    // HttpOnly Cookie는 JavaScript 접근 불가
-    // 서버가 401 반환 시 fetchWithAuth에서 자동 처리
-    return true;
+    const userId = localStorage.getItem('userId');
+    return !!userId;  // userId가 있으면 true, 없으면 false
 }
 
 /**
  * 현재 사용자 ID 조회
  *
  * HttpOnly Cookie는 JavaScript에서 JWT 파싱 불가
- * GET /users/me API 호출로 대체 필요
+ * 로그인 시 localStorage에 저장된 userId 사용
  *
- * @returns {Promise<number|null>}
+ * @returns {number|null}
  */
-async function getCurrentUserId() {
-    try {
-        const user = await fetchWithAuth('/users/me');
-        return user.userId;
-    } catch (error) {
-        console.error('Failed to get current user:', error);
+function getCurrentUserId() {
+    const userId = localStorage.getItem('userId');
+
+    if (!userId) {
+        console.warn('userId not found in localStorage');
         return null;
     }
+
+    // 문자열을 숫자로 변환
+    const userIdNumber = parseInt(userId, 10);
+
+    if (isNaN(userIdNumber)) {
+        console.error('Invalid userId in localStorage:', userId);
+        return null;
+    }
+
+    return userIdNumber;
 }
 
 /**
@@ -181,12 +218,19 @@ async function getCurrentUserId() {
  * @returns {Promise<{image_id: number, image_url: string}>}
  */
 async function uploadImage(file) {
+    const csrfToken = getCsrfToken();
     const formData = new FormData();
     formData.append('file', file);
+
+    const headers = {};
+    if (csrfToken) {
+        headers['X-XSRF-TOKEN'] = csrfToken;
+    }
 
     const response = await fetch(`${API_BASE_URL}/images`, {
         method: 'POST',
         credentials: 'include',  // Cookie 자동 전송
+        headers: headers,  // CSRF 토큰 추가
         body: formData  // Content-Type 자동 설정 (multipart/form-data)
     });
 
@@ -252,4 +296,19 @@ function translateErrorCode(code) {
     // ErrorCode 추출 (예: "USER-002: Email already exists" → "USER-002")
     const match = code.match(/([A-Z]+-\d+)/);
     return match ? (errorMessages[match[1]] || code) : code;
+}
+
+/**
+ * CSRF 토큰 추출
+ * XSRF-TOKEN 쿠키에서 토큰 값을 읽어옴
+ *
+ * @returns {string|null} - CSRF 토큰 또는 null
+ */
+function getCsrfToken() {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; XSRF-TOKEN=`);
+    if (parts.length === 2) {
+        return parts.pop().split(';').shift();
+    }
+    return null;
 }
