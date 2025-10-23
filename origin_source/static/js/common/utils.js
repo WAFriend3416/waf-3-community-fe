@@ -73,22 +73,34 @@ function formatNumberCompact(num) {
 
 /**
  * 에러 메시지 표시
- * 현재: alert (추후 모달/토스트로 개선)
+ * Toast 알림 시스템 사용
  *
- * @param {string} message
+ * @param {string} message - 에러 메시지
+ * @param {string} title - 제목 (기본: '오류')
  */
-function showError(message) {
-    alert(message); // TODO: 모달 또는 토스트로 개선
+function showError(message, title = '오류') {
+    if (typeof Toast !== 'undefined') {
+        Toast.error(message, title);
+    } else {
+        console.error('Toast not loaded, message:', message);
+        alert(message); // Fallback
+    }
 }
 
 /**
  * 성공 메시지 표시
- * 현재: alert (추후 모달/토스트로 개선)
+ * Toast 알림 시스템 사용
  *
- * @param {string} message
+ * @param {string} message - 성공 메시지
+ * @param {string} title - 제목 (기본: '성공')
  */
-function showSuccess(message) {
-    alert(message); // TODO: 모달 또는 토스트로 개선
+function showSuccess(message, title = '성공') {
+    if (typeof Toast !== 'undefined') {
+        Toast.success(message, title);
+    } else {
+        console.warn('Toast not loaded, message:', message);
+        alert(message); // Fallback
+    }
 }
 
 /**
