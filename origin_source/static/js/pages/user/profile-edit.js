@@ -325,9 +325,6 @@
         event.returnValue = ''; // Chrome 필수
         return '';
       }
-
-      // 변경사항 없으면 목록으로 리디렉트 플래그 저장
-      sessionStorage.setItem('redirectToList', 'true');
     });
 
     // 4. pageshow: 뒤로가기로 돌아왔을 때 (브라우저 캐시에서 로드)
