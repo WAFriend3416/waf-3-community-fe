@@ -71,3 +71,7 @@ docker-data/
 CLAUDE.md
 AGENTS.md
 .mcp.jsonlogin_sample_images/
+*.png
+test_image/
+.mcp.json
+.amazonq
