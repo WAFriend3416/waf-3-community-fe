@@ -38,15 +38,37 @@
     /**
      * 초기화
      */
-    function init() {
-        // 이미 로그인된 상태면 게시글 목록으로 리다이렉트
+    async function init() {
+        // userId가 있으면 쿠키 유효성 검증
         if (isAuthenticated()) {
-            window.location.replace(CONFIG.LIST_URL);
-            return;
+            const isValid = await verifySession();
+            if (isValid) {
+                // 유효한 세션 → 게시글 목록으로 리다이렉트
+                window.location.replace(CONFIG.LIST_URL);
+                return;
+            }
+            // 무효한 세션 → userId 정리 (stale state)
+            localStorage.removeItem('userId');
         }
 
         cacheElements();
         bindEvents();
+    }
+
+    /**
+     * 세션 유효성 검증 (쿠키 확인)
+     * @returns {Promise<boolean>}
+     */
+    async function verifySession() {
+        try {
+            // 간단한 인증 API 호출로 쿠키 유효성 확인
+            const response = await fetch(`${CONFIG.API_BASE_URL}/posts?limit=1`, {
+                credentials: 'include'
+            });
+            return response.ok;
+        } catch (error) {
+            return false;
+        }
     }
 
     /**
