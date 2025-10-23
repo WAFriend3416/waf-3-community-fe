@@ -18,6 +18,7 @@
   const state = {
     userId: null,
     selectedFile: null,
+    removeExistingImage: false,  // 이미지 제거 플래그
     isSubmitting: false,  // 중복 제출 방지 플래그
     hasChanges: false,    // 변경사항 추적
     initialData: {        // 초기 데이터 저장
@@ -30,6 +31,7 @@
     form: null,
     profileImage: null,
     profileImageInput: null,
+    removeImageButton: null,
     nicknameInput: null,
     nicknameError: null,
     saveButton: null,
@@ -68,6 +70,7 @@
     elements.form = document.querySelector('[data-form="profile-edit"]');
     elements.profileImage = document.querySelector('[data-image="profile"]');
     elements.profileImageInput = document.querySelector('[data-field="profileImage"]');
+    elements.removeImageButton = document.querySelector('[data-action="remove-image"]');
     elements.nicknameInput = document.querySelector('[data-field="nickname"]');
     elements.nicknameError = document.querySelector('[data-error="nickname"]');
     elements.saveButton = document.querySelector('[data-action="save"]');
@@ -91,6 +94,9 @@
     }
     if (elements.profileImageInput) {
       elements.profileImageInput.addEventListener('change', handleImageChange);
+    }
+    if (elements.removeImageButton) {
+      elements.removeImageButton.addEventListener('click', handleRemoveImage);
     }
     if (elements.withdrawButton) {
       elements.withdrawButton.addEventListener('click', handleWithdraw);
@@ -128,6 +134,10 @@
         elements.profileImage.src = user.profileImage;
         elements.profileImage.style.display = 'block';
         state.initialData.profileImageSrc = user.profileImage;  // 초기 값 저장
+        // 이미지가 있으면 제거 버튼 표시
+        if (elements.removeImageButton) {
+          elements.removeImageButton.style.display = 'block';
+        }
       }
     } catch (error) {
       console.error('Failed to load user data:', error);
@@ -165,7 +175,7 @@
   function checkForChanges() {
     const currentNickname = elements.nicknameInput ? elements.nicknameInput.value : '';
     const hasNicknameChange = currentNickname !== state.initialData.nickname;
-    const hasImageChange = state.selectedFile !== null;
+    const hasImageChange = state.selectedFile !== null || state.removeExistingImage;
 
     state.hasChanges = hasNicknameChange || hasImageChange;
   }
@@ -193,8 +203,16 @@
     try {
       const formData = new FormData();
       formData.append('nickname', nickname);
-      if (state.selectedFile) {
-        formData.append('profileImage', state.selectedFile);  // camelCase로 통일
+      
+      // 이미지 처리
+      if (state.removeExistingImage) {
+        // 이미지 제거 신호 전송
+        formData.append('removeImage', 'true');
+        console.log('[DEBUG] 이미지 제거 요청:', { removeImage: true });
+      } else if (state.selectedFile) {
+        // 새 이미지 업로드
+        formData.append('profileImage', state.selectedFile);
+        console.log('[DEBUG] 이미지 변경 요청');
       }
 
       // CSRF 토큰 추출
@@ -212,6 +230,13 @@
         credentials: 'include',  // HttpOnly Cookie 자동 전송
         body: formData  // Content-Type 자동 설정 (multipart/form-data)
       });
+
+      if (response.status === 204) {
+        Toast.success('프로필이 수정되었습니다.', '수정 완료', 3000, () => {
+          window.location.reload();
+        });
+        return;
+      }
 
       const data = await response.json();
 
@@ -268,14 +293,38 @@
     }
 
     state.selectedFile = file;
+    state.removeExistingImage = false;  // 새 이미지 선택 시 제거 플래그 해제
     checkForChanges();  // 변경 감지
 
     const reader = new FileReader();
     reader.onload = e => {
       elements.profileImage.src = e.target.result;
       elements.profileImage.style.display = 'block';
+      if (elements.removeImageButton) {
+        elements.removeImageButton.style.display = 'block';
+      }
     };
     reader.readAsDataURL(file);
+  }
+
+  function handleRemoveImage() {
+    state.selectedFile = null;
+    state.removeExistingImage = true;
+
+    console.log('[DEBUG] handleRemoveImage 호출:', {
+      selectedFile: state.selectedFile,
+      removeExistingImage: state.removeExistingImage
+    });
+
+    // 기본 이미지로 변경
+    elements.profileImage.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';
+    elements.profileImage.style.display = 'block';
+    if (elements.removeImageButton) {
+      elements.removeImageButton.style.display = 'none';
+    }
+    elements.profileImageInput.value = '';
+
+    checkForChanges();  // 변경 감지
   }
 
   async function handleGoBack() {
@@ -362,7 +411,8 @@
       });
     } catch (error) {
       console.error('Failed to withdraw:', error);
-      Toast.error('회원탈퇴에 실패했습니다.', '오류');
+      const translatedMessage = translateErrorCode(error.message);
+      Toast.error(translatedMessage || '회원탈퇴에 실패했습니다.', '오류');
     }
   }
 

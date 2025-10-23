@@ -69,10 +69,8 @@
       elements.writeButton.addEventListener('click', handleWriteClick);
     }
 
-    // 더보기 버튼
-    if (elements.loadMoreButton) {
-      elements.loadMoreButton.addEventListener('click', handleLoadMore);
-    }
+    // 무한 스크롤 (Scroll 이벤트)
+    window.addEventListener('scroll', debounce(handleScroll, 300));
 
     // 게시글 카드 클릭 (이벤트 위임)
     if (elements.postList) {
@@ -119,9 +117,24 @@
     window.location.href = CONFIG.WRITE_POST_URL;
   }
 
-  function handleLoadMore(e) {
-    e.preventDefault();
-    loadPosts();
+  /**
+   * 무한 스크롤 핸들러
+   * Viewport 하단 200px 도달 시 자동 로딩
+   */
+  function handleScroll() {
+    // 로딩 중이거나 더 이상 데이터가 없으면 종료
+    if (state.isLoading || !state.hasMore) return;
+
+    // Viewport 하단까지 남은 거리 계산
+    const scrollHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.scrollY || window.pageYOffset;
+    const clientHeight = window.innerHeight;
+    const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+
+    // 하단 200px 도달 시 자동 로딩
+    if (distanceToBottom < 200) {
+      loadPosts();
+    }
   }
 
   function handlePostClick(e) {
@@ -382,6 +395,27 @@
     } finally {
       window.location.replace(CONFIG.LOGIN_URL);
     }
+  }
+
+  // ============================================
+  // Utility Functions
+  // ============================================
+  /**
+   * Debounce 패턴 (성능 최적화)
+   * @param {Function} func - 실행할 함수
+   * @param {Number} wait - 대기 시간 (ms)
+   * @returns {Function} - Debounced 함수
+   */
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
   }
 
   // ============================================

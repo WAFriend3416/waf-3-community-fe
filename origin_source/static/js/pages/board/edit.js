@@ -239,8 +239,18 @@
     try {
       // 새 이미지 업로드
       if (state.selectedFile) {
-        const imageResult = await uploadImage(state.selectedFile);
-        state.uploadedImageId = imageResult.imageId;  // camelCase 수정
+        try {
+          const imageResult = await uploadImage(state.selectedFile);
+          state.uploadedImageId = imageResult.imageId;  // camelCase 수정
+        } catch (error) {
+          console.error('Image upload failed:', error);
+          const translatedMessage = translateErrorCode(error.message);
+          Toast.error(translatedMessage || '이미지 업로드에 실패했습니다.', '오류');
+          state.isSubmitting = false;
+          elements.submitButton.disabled = false;
+          elements.submitButton.textContent = '수정완료';
+          return;
+        }
       }
 
       // 게시글 수정 (PATCH)

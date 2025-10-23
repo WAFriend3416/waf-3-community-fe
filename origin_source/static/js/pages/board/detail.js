@@ -242,7 +242,8 @@
       state.isLiked = originalLiked;
       updateLikeButton(originalLiked);
       updateLikeCount(originalCount);
-      showError(error.message);
+      const translatedMessage = translateErrorCode(error.message);
+      showError(translatedMessage || '좋아요 처리에 실패했습니다.');
     }
   }
 
@@ -309,7 +310,8 @@
 
     } catch (error) {
       console.error('Failed to submit comment:', error);
-      showError(error.message);
+      const translatedMessage = translateErrorCode(error.message);
+      showError(translatedMessage || '댓글 작성에 실패했습니다.');
     }
   }
 
@@ -370,7 +372,8 @@
 
     } catch (error) {
       console.error('Failed to delete comment:', error);
-      showError(error.message);
+      const translatedMessage = translateErrorCode(error.message);
+      showError(translatedMessage || '댓글 삭제에 실패했습니다.');
     }
   }
 
@@ -494,7 +497,8 @@
 
     } catch (error) {
       console.error('Failed to delete post:', error);
-      showError(error.message);
+      const translatedMessage = translateErrorCode(error.message);
+      showError(translatedMessage || '게시글 삭제에 실패했습니다.');
       closeDeleteModal();
     }
   }

@@ -8,6 +8,7 @@
 // API Base URL
 // 추후 서버 분리시, 환경 변수 처리 필수
 const API_BASE_URL = 'http://localhost:8080';
+const LOGIN_URL = '/pages/user/login.html';
 
 /**
  * HttpOnly Cookie 기반 Fetch 래퍼
@@ -69,7 +70,7 @@ async function fetchWithAuth(url, options = {}) {
             } else {
                 // 토큰 갱신 실패 → 로그인 페이지로 리다이렉트
                 logout();
-                window.location.href = '/static/pages/user/login.html';
+                window.location.href = LOGIN_URL;
                 throw new Error('Authentication failed');
             }
         }

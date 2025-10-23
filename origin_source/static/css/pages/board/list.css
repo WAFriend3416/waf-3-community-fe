@@ -2,6 +2,10 @@
    Board List Page Styles
    ============================================ */
 
+html {
+  scroll-behavior: smooth;
+}
+
 .header {
   position: sticky;
   top: 0;
@@ -41,7 +45,7 @@
   margin-bottom: var(--spacing-8);
 }
 
-/* Loading Indicator */
+/* Loading Indicator (Infinite Scroll) */
 .loading-indicator {
   display: flex;
   flex-direction: column;
@@ -49,6 +53,14 @@
   justify-content: center;
   padding: var(--spacing-8);
   gap: var(--spacing-3);
+  opacity: 0;
+  animation: fadeIn 0.3s ease-in forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
 }
 
 .loading-indicator__spinner {
@@ -69,13 +81,6 @@
 .loading-indicator__text {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-}
-
-/* Load More Container */
-.load-more-container {
-  display: flex;
-  justify-content: center;
-  padding: var(--spacing-6) 0;
 }
 
 /* Empty State */

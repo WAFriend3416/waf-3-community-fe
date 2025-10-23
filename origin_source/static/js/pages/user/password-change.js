@@ -39,8 +39,9 @@
       // userId 검증 (null, undefined만 체크)
       if (!userId) {
         console.error('Failed to get userId');
-        alert('로그인이 필요합니다.');
-        window.location.href = '/pages/user/login.html';
+        Toast.warning('로그인이 필요합니다.', '인증 필요', 3000, () => {
+          window.location.href = '/pages/user/login.html';
+        });
         return;
       }
 
@@ -52,8 +53,9 @@
       setupBackNavigation();  // 브라우저 뒤로가기 처리
     } catch (error) {
       console.error('Initialization failed:', error);
-      alert('로그인이 필요합니다.');
-      window.location.href = '/pages/user/login.html';
+      Toast.warning('로그인이 필요합니다.', '인증 필요', 3000, () => {
+        window.location.href = '/pages/user/login.html';
+      });
     }
   }
 
@@ -231,9 +233,13 @@
         })
       });
 
-      alert('비밀번호가 변경되었습니다. 다시 로그인해주세요.');
-      logout();
-      window.location.href = '/pages/user/login.html';
+      // beforeunload 경고 방지
+      state.hasChanges = false;
+
+      Toast.success('비밀번호가 변경되었습니다. 다시 로그인해주세요.', '변경 완료', 3000, async () => {
+        await logout();
+        window.location.href = '/pages/user/login.html';
+      });
     } catch (error) {
       console.error('Failed to change password:', error);
 
@@ -244,7 +250,7 @@
       } else if (errorMessage.includes('USER-004')) {
         showNewPasswordError('비밀번호 정책을 만족하지 않습니다.');
       } else {
-        alert(translateErrorCode(errorMessage) || '비밀번호 변경에 실패했습니다.');
+        Toast.error(translateErrorCode(errorMessage) || '비밀번호 변경에 실패했습니다.', '변경 실패');
       }
 
       state.isSubmitting = false;

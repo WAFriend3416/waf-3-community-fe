@@ -221,7 +221,8 @@
           state.uploadedImageUrl = imageResult.imageUrl;    // camelCase 수정
         } catch (error) {
           console.error('Image upload failed:', error);
-          showImageError(error.message);
+          const translatedMessage = translateErrorCode(error.message);
+          showImageError(translatedMessage || '이미지 업로드에 실패했습니다.');
           state.isSubmitting = false;
           setSubmitButtonState(false);
           return;
