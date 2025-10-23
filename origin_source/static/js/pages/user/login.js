@@ -39,14 +39,6 @@
      * 초기화
      */
     function init() {
-        // 프로필/비밀번호 변경 페이지에서 뒤로가기한 경우 목록으로 리디렉트
-        const redirectToList = sessionStorage.getItem('redirectToList');
-        if (redirectToList === 'true') {
-            sessionStorage.removeItem('redirectToList');
-            window.location.replace(CONFIG.LIST_URL);
-            return;
-        }
-
         // 로그인 페이지 진입 시 기존 localStorage 정리 (userId 불일치 방지)
         localStorage.removeItem('userId');
 
@@ -121,8 +113,8 @@
                     localStorage.setItem('userId', result.data.userId);
                 }
 
-                // 게시글 목록으로 리다이렉트
-                window.location.href = CONFIG.LIST_URL;
+                // 게시글 목록으로 리다이렉트 (replace로 히스토리에서 로그인 페이지 제거)
+                window.location.replace(CONFIG.LIST_URL);
             } else {
                 throw new Error(result.message);
             }
