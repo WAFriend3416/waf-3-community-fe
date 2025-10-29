@@ -435,10 +435,10 @@
     function setLoading(loading) {
         if (loading) {
             elements.submitButton.disabled = true;
-            elements.submitButton.textContent = '회원가입 중...';
+            elements.submitButton.classList.add('btn--loading');
         } else {
             elements.submitButton.disabled = false;
-            elements.submitButton.textContent = '회원가입';
+            elements.submitButton.classList.remove('btn--loading');
         }
     }
 

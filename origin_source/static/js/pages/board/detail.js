@@ -317,6 +317,7 @@
     const submitButton = elements.commentForm.querySelector('[data-action="submit-comment"]');
     if (submitButton) {
       submitButton.disabled = true;
+      submitButton.classList.add('btn--loading');
     }
 
     try {
@@ -373,6 +374,7 @@
       state.isSubmittingComment = false;
       if (submitButton) {
         submitButton.disabled = false;
+        submitButton.classList.remove('btn--loading');
       }
     }
   }
@@ -766,7 +768,7 @@
 
     div.innerHTML = `
       <div class="comment-item__header">
-        <img src="${authorImage}" alt="${authorName} 프로필" class="comment-item__avatar" loading="lazy">
+        <img src="${authorImage}" alt="${authorName} 프로필" class="comment-item__avatar" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=default';">
         <div class="comment-item__info">
           <div class="comment-item__author">${authorName}</div>
           <div class="comment-item__date">${formattedDate}</div>

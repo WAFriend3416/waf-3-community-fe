@@ -87,9 +87,10 @@
   // Initial Data Load
   // ============================================
   async function loadInitialData() {
-    // 샘플 게시글 제거
+    // 샘플 게시글 제거 및 스켈레톤 표시
     if (elements.postList) {
       elements.postList.innerHTML = '';
+      renderSkeletonCards();
     }
 
     // 프로필 이미지 로드
@@ -204,6 +205,11 @@
   function handlePostsLoaded(data) {
     const { posts, nextCursor, hasMore } = data;
 
+    // 첫 로드 시 스켈레톤 제거
+    if (state.currentCursor === null) {
+      removeSkeletonCards();
+    }
+
     // 첫 로드이고 게시글이 없는 경우
     if (posts.length === 0 && state.currentCursor === null) {
       showEmptyState();
@@ -262,13 +268,13 @@
     // 이미지 HTML (있는 경우)
     const imageHtml = post.imageUrl ? `
       <div class="post-card__image-wrapper">
-        <img src="${escapeHtml(post.imageUrl)}" alt="게시글 이미지" class="post-card__image" loading="lazy">
+        <img src="${escapeHtml(post.imageUrl)}" alt="게시글 이미지" class="post-card__image" loading="lazy" onerror="this.style.display='none';">
       </div>
     ` : '';
 
     article.innerHTML = `
       <div class="post-card__header">
-        <img src="${authorImage}" alt="작성자 프로필" class="post-card__avatar" loading="lazy">
+        <img src="${authorImage}" alt="작성자 프로필" class="post-card__avatar" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=default';">
         <div class="post-card__author">
           <div class="post-card__author-name">${authorName}</div>
           <div class="post-card__date">${formattedDate}</div>
@@ -304,6 +310,49 @@
   // ============================================
   // UI Helper Functions
   // ============================================
+  function renderSkeletonCards() {
+    if (!elements.postList) return;
+
+    const skeletonCount = 3;
+    for (let i = 0; i < skeletonCount; i++) {
+      const skeleton = createSkeletonCard();
+      elements.postList.appendChild(skeleton);
+    }
+  }
+
+  function createSkeletonCard() {
+    const article = document.createElement('article');
+    article.className = 'skeleton-post-card';
+    article.setAttribute('data-skeleton', 'true');
+
+    article.innerHTML = `
+      <div class="skeleton-post-card__header">
+        <div class="skeleton skeleton-post-card__avatar"></div>
+        <div class="skeleton-post-card__author">
+          <div class="skeleton skeleton-post-card__author-name"></div>
+          <div class="skeleton skeleton-post-card__date"></div>
+        </div>
+      </div>
+      <div class="skeleton skeleton-post-card__title"></div>
+      <div class="skeleton skeleton-post-card__excerpt"></div>
+      <div class="skeleton skeleton-post-card__excerpt"></div>
+      <div class="skeleton-post-card__meta">
+        <div class="skeleton skeleton-post-card__stat"></div>
+        <div class="skeleton skeleton-post-card__stat"></div>
+        <div class="skeleton skeleton-post-card__stat"></div>
+      </div>
+    `;
+
+    return article;
+  }
+
+  function removeSkeletonCards() {
+    if (!elements.postList) return;
+
+    const skeletons = elements.postList.querySelectorAll('[data-skeleton="true"]');
+    skeletons.forEach(skeleton => skeleton.remove());
+  }
+
   function setLoading(loading) {
     state.isLoading = loading;
 

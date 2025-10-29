@@ -408,6 +408,11 @@
   function updateSubmitButtonState() {
     if (elements.submitButton) {
       elements.submitButton.disabled = !state.hasChanges || state.isSubmitting;
+      if (state.isSubmitting) {
+        elements.submitButton.classList.add('btn--loading');
+      } else {
+        elements.submitButton.classList.remove('btn--loading');
+      }
     }
   }
 

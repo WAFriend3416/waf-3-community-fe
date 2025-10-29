@@ -549,7 +549,11 @@
   function setSubmitButtonState(isSubmitting) {
     if (elements.submitButton) {
       elements.submitButton.disabled = isSubmitting;
-      elements.submitButton.textContent = isSubmitting ? '작성 중...' : '작성완료';
+      if (isSubmitting) {
+        elements.submitButton.classList.add('btn--loading');
+      } else {
+        elements.submitButton.classList.remove('btn--loading');
+      }
     }
   }
 

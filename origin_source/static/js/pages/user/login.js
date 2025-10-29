@@ -270,10 +270,10 @@
     function setLoading(loading) {
         if (loading) {
             elements.submitButton.disabled = true;
-            elements.submitButton.textContent = '로그인 중...';
+            elements.submitButton.classList.add('btn--loading');
         } else {
             elements.submitButton.disabled = false;
-            elements.submitButton.textContent = '로그인';
+            elements.submitButton.classList.remove('btn--loading');
         }
     }
 
