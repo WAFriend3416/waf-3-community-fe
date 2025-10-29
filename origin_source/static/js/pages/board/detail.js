@@ -766,7 +766,7 @@
 
     div.innerHTML = `
       <div class="comment-item__header">
-        <img src="${authorImage}" alt="${authorName} 프로필" class="comment-item__avatar">
+        <img src="${authorImage}" alt="${authorName} 프로필" class="comment-item__avatar" loading="lazy">
         <div class="comment-item__info">
           <div class="comment-item__author">${authorName}</div>
           <div class="comment-item__date">${formattedDate}</div>

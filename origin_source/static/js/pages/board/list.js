@@ -262,13 +262,13 @@
     // 이미지 HTML (있는 경우)
     const imageHtml = post.imageUrl ? `
       <div class="post-card__image-wrapper">
-        <img src="${escapeHtml(post.imageUrl)}" alt="게시글 이미지" class="post-card__image">
+        <img src="${escapeHtml(post.imageUrl)}" alt="게시글 이미지" class="post-card__image" loading="lazy">
       </div>
     ` : '';
 
     article.innerHTML = `
       <div class="post-card__header">
-        <img src="${authorImage}" alt="작성자 프로필" class="post-card__avatar">
+        <img src="${authorImage}" alt="작성자 프로필" class="post-card__avatar" loading="lazy">
         <div class="post-card__author">
           <div class="post-card__author-name">${authorName}</div>
           <div class="post-card__date">${formattedDate}</div>
