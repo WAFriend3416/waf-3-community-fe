@@ -259,7 +259,51 @@
       }
     } catch (error) {
       console.error('Failed to toggle like:', error);
-      // Rollback: 원래 상태로 복원
+
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // LIKE-001 에러 처리: 이미 좋아요가 눌려있으면 취소 시도
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      const errorCode = error.message?.match(/([A-Z]+-\d+)/)?.[1];
+
+      if (errorCode === 'LIKE-001') {
+        // 이미 좋아요가 눌려있는 상태 → 취소 시도
+        console.warn('LIKE-001 detected: Already liked, attempting to unlike...');
+
+        try {
+          // 상태를 true로 변경 (이미 좋아요 눌린 상태)
+          state.isLiked = true;
+          updateLikeButton(true);
+
+          // 좋아요 취소 API 호출
+          await fetchWithAuth(`/posts/${state.postId}/like`, {
+            method: 'DELETE'
+          });
+
+          // 취소 성공 → UI 업데이트 (조용히 처리)
+          state.isLiked = false;
+          const newCount = originalCount;  // 이미 +1 했다가 롤백되었으므로 원래 개수 유지
+          if (state.post && state.post.stats) {
+            state.post.stats.likeCount = newCount;
+          }
+          updateLikeButton(false);
+          updateLikeCount(newCount);
+          return;
+
+        } catch (unlikeError) {
+          console.error('Failed to unlike after LIKE-001:', unlikeError);
+          // 취소도 실패 → 원래 상태로 복원
+          state.isLiked = originalLiked;
+          if (state.post && state.post.stats) {
+            state.post.stats.likeCount = originalCount;
+          }
+          updateLikeButton(originalLiked);
+          updateLikeCount(originalCount);
+          showError('좋아요 처리에 실패했습니다.');
+          return;
+        }
+      }
+
+      // 기타 에러 → Rollback
       state.isLiked = originalLiked;
       if (state.post && state.post.stats) {
         state.post.stats.likeCount = originalCount;
