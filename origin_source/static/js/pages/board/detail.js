@@ -212,9 +212,7 @@
 
     // 로그인 확인
     if (!isAuthenticated()) {
-      Toast.error('로그인이 필요합니다.', '인증 필요', 2000, () => {
-        window.location.replace(CONFIG.LOGIN_URL);
-      });
+      await loginRequiredModal('좋아요');
       return;
     }
 
@@ -337,9 +335,7 @@
 
     // 로그인 확인
     if (!isAuthenticated()) {
-      Toast.error('로그인이 필요합니다.', '인증 필요', 2000, () => {
-        window.location.replace(CONFIG.LOGIN_URL);
-      });
+      await loginRequiredModal('댓글 작성');
       return;
     }
 

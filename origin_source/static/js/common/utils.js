@@ -262,7 +262,7 @@ function confirmModal(title, description, options = {}) {
             overlay.classList.remove('is-active');
             setTimeout(() => {
                 overlay.remove();
-                if (!document.querySelector('.modal-overlay')) {
+                if (!document.querySelector('.modal-overlay.is-active')) {
                     document.body.classList.remove('modal-open');
                 }
             }, 300);
@@ -276,6 +276,77 @@ function confirmModal(title, description, options = {}) {
         overlay.querySelector('[data-action="confirm"]').addEventListener('click', () => {
             closeModal();
             resolve(true);
+        });
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeModal();
+                resolve(false);
+            }
+        });
+    });
+}
+
+/**
+ * 로그인 요청 모달 표시
+ * 비회원이 인증이 필요한 기능을 사용하려고 할 때 표시
+ *
+ * @param {string} action - 수행하려던 액션 (예: "좋아요", "댓글 작성")
+ * @returns {Promise<boolean>} - 로그인 페이지로 이동하면 true (실제로는 페이지 이동하므로 resolve 안됨)
+ */
+function loginRequiredModal(action = '이 기능') {
+    return new Promise((resolve) => {
+        // 기존 모달이 있으면 제거
+        const existingModal = document.querySelector('[data-modal="login-required"]');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.setAttribute('data-modal', 'login-required');
+        overlay.innerHTML = `
+            <div class="modal modal--confirm">
+                <div class="modal__body">
+                    <div class="modal__icon modal__icon--info">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                    </div>
+                    <div class="modal__message">로그인이 필요합니다</div>
+                    <div class="modal__description">${escapeHtml(action)}을(를) 사용하려면 로그인이 필요합니다.</div>
+                </div>
+                <div class="modal__footer">
+                    <button class="btn btn--secondary" data-action="cancel">취소</button>
+                    <button class="btn btn--primary" data-action="login">로그인</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        document.body.classList.add('modal-open');
+
+        setTimeout(() => overlay.classList.add('is-active'), 10);
+
+        const closeModal = () => {
+            overlay.classList.remove('is-active');
+            setTimeout(() => {
+                overlay.remove();
+                if (!document.querySelector('.modal-overlay.is-active')) {
+                    document.body.classList.remove('modal-open');
+                }
+            }, 300);
+        };
+
+        overlay.querySelector('[data-action="cancel"]').addEventListener('click', () => {
+            closeModal();
+            resolve(false);
+        });
+
+        overlay.querySelector('[data-action="login"]').addEventListener('click', () => {
+            closeModal();
+            // 로그인 페이지로 이동
+            window.location.href = '/pages/user/login.html';
         });
 
         overlay.addEventListener('click', (e) => {

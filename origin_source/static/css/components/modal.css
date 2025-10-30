@@ -164,6 +164,10 @@
   color: var(--color-success);
 }
 
+.modal--confirm .modal__icon--info {
+  color: var(--color-primary);
+}
+
 .modal--confirm .modal__message {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
