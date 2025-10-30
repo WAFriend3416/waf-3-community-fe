@@ -11,7 +11,7 @@
   // Configuration
   // ============================================
   const CONFIG = {
-    PAGE_SIZE: 20,
+    PAGE_SIZE: 10,
     WRITE_POST_URL: '/pages/board/write.html',
     POST_DETAIL_URL: '/pages/board/detail.html',
     LOGIN_URL: '/pages/user/login.html'
@@ -93,8 +93,18 @@
       renderSkeletonCards();
     }
 
+    // 토큰 자동 복원 시도 (로그인 후 페이지 이동 시 in-memory 토큰 복원)
+    if (!getAccessToken()) {
+      try {
+        await refreshAccessToken();
+      } catch (error) {
+        // 토큰 복원 실패는 무시 (비로그인 상태로 진행)
+        console.log('Token refresh failed, continuing as guest');
+      }
+    }
+
     // 프로필 이미지 로드
-    loadUserProfile();
+    await loadUserProfile();
 
     // 첫 페이지 게시글 로드
     await loadPosts();
