@@ -56,9 +56,6 @@
      * 초기화
      */
     function init() {
-        // 회원가입 페이지 진입 시 기존 localStorage 정리 (userId 불일치 방지)
-        localStorage.removeItem('userId');
-
         cacheElements();
         bindEvents();
     }
@@ -192,9 +189,9 @@
             const data = await response.json();
 
             if (response.ok) {
-                // userId만 localStorage에 저장 (토큰은 Cookie)
-                if (data.data && data.data.userId) {
-                    localStorage.setItem('userId', data.data.userId);
+                // 응답 body의 access_token을 메모리에 저장
+                if (data.data && data.data.access_token) {
+                    setAccessToken(data.data.access_token);
                 }
 
                 // 회원가입 성공 - 자동 로그인되어 게시글 목록으로 이동

@@ -39,7 +39,7 @@
      * 초기화
      */
     async function init() {
-        // userId가 있으면 쿠키 유효성 검증
+        // 이미 로그인된 상태면 게시글 목록으로 리다이렉트
         if (isAuthenticated()) {
             const isValid = await verifySession();
             if (isValid) {
@@ -47,8 +47,8 @@
                 window.location.replace(CONFIG.LIST_URL);
                 return;
             }
-            // 무효한 세션 → userId 정리 (stale state)
-            localStorage.removeItem('userId');
+            // 무효한 세션 → 토큰 제거
+            removeAccessToken();
         }
 
         cacheElements();
@@ -132,9 +132,9 @@
             const result = await response.json();
 
             if (response.ok) {
-                // userId만 localStorage에 저장 (토큰은 Cookie)
-                if (result.data && result.data.userId) {
-                    localStorage.setItem('userId', result.data.userId);
+                // 응답 body의 access_token을 메모리에 저장
+                if (result.data && result.data.access_token) {
+                    setAccessToken(result.data.access_token);
                 }
 
                 // 게시글 목록으로 리다이렉트 (replace로 히스토리에서 로그인 페이지 제거)

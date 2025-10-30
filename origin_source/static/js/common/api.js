@@ -1,6 +1,6 @@
 /**
  * API Utility
- * HttpOnly Cookie 기반 인증 및 REST API 통신
+ * in-memory Access Token + HttpOnly Cookie Refresh Token 인증
  * 참조: @CLAUDE.md Section 3.1, 3.2
  * 참조: @docs/fe/FRONTEND_GUIDE.md Section 2
  */
@@ -9,6 +9,86 @@
 // 추후 서버 분리시, 환경 변수 처리 필수
 const API_BASE_URL = 'http://localhost:8080';
 const LOGIN_URL = '/pages/user/login.html';
+
+// ========================================
+// in-memory Access Token 관리
+// ========================================
+
+/**
+ * Access Token 저장소 (순수 in-memory)
+ * - F5 새로고침 시 null로 초기화됨
+ * - Refresh Token(HttpOnly Cookie)으로 자동 복원
+ */
+let accessToken = null;
+
+/**
+ * Access Token 조회
+ * @returns {string|null}
+ */
+function getAccessToken() {
+    return accessToken;
+}
+
+/**
+ * Access Token 저장
+ * @param {string} token - JWT Access Token
+ */
+function setAccessToken(token) {
+    accessToken = token;
+}
+
+/**
+ * Access Token 제거
+ */
+function removeAccessToken() {
+    accessToken = null;
+}
+
+// ========================================
+// JWT 디코딩
+// ========================================
+
+/**
+ * JWT 디코딩 (payload 추출)
+ * - 서명 검증은 서버에서 수행
+ * - 프론트엔드는 userId 추출만 목적
+ *
+ * @param {string} token - JWT 토큰
+ * @returns {Object|null} - payload 객체 또는 null
+ */
+function decodeJWT(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64).split('').map(c =>
+                '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+            ).join('')
+        );
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        console.error('JWT decode failed:', error);
+        return null;
+    }
+}
+
+/**
+ * JWT에서 userId 추출
+ * @param {string} token - JWT Access Token
+ * @returns {number|null} - userId 또는 null
+ */
+function getUserIdFromToken(token) {
+    if (!token) return null;
+
+    const payload = decodeJWT(token);
+    if (!payload || !payload.sub) {
+        console.warn('Invalid JWT payload or missing sub claim');
+        return null;
+    }
+
+    const userId = parseInt(payload.sub, 10);
+    return isNaN(userId) ? null : userId;
+}
 
 /**
  * HttpOnly Cookie 기반 Fetch 래퍼
@@ -107,6 +187,7 @@ let refreshTokenPromise = null;
  * Access Token 갱신
  * POST /auth/refresh_token 호출
  * - refresh_token은 HttpOnly Cookie로 자동 전송
+ * - 응답 body의 access_token을 메모리에 저장
  * - 동시 호출 방지: 여러 요청이 동시에 갱신을 시도해도 한 번만 실행
  *
  * @returns {Promise<boolean>} 갱신 성공 여부
@@ -128,12 +209,13 @@ async function refreshAccessToken() {
 
             if (response.ok) {
                 const data = await response.json();
-                // userId를 localStorage에 저장 (동기화)
-                if (data.data && data.data.userId) {
-                    localStorage.setItem('userId', data.data.userId);
+                // 응답 body의 access_token을 메모리에 저장
+                if (data.data && data.data.access_token) {
+                    setAccessToken(data.data.access_token);
+                    return true;
                 }
-                // 서버가 새 access_token Cookie 설정
-                return true;
+                console.error('Token refresh response missing access_token:', data);
+                return false;
             }
             return false;
         } catch (error) {
@@ -151,6 +233,7 @@ async function refreshAccessToken() {
 /**
  * 로그아웃
  * - POST /auth/logout 호출 (서버에서 refresh_token 무효화 및 Cookie 삭제)
+ * - 메모리에서 access_token 제거
  *
  * 참고: /auth/logout은 인증 필요 (SecurityConfig)
  */
@@ -165,8 +248,8 @@ async function logout() {
         console.error('Logout request failed:', error);
     }
 
-    // localStorage에서 userId 삭제
-    localStorage.removeItem('userId');
+    // 메모리에서 access_token 제거
+    removeAccessToken();
 
     // 서버가 Cookie 삭제 처리 (MaxAge=0)
 }
@@ -174,41 +257,59 @@ async function logout() {
 /**
  * 로그인 여부 확인
  *
- * HttpOnly Cookie는 JavaScript에서 접근 불가하므로
- * localStorage의 userId 존재 여부로 로그인 상태 판단
+ * 메모리의 access_token 존재 여부로 로그인 상태 판단
+ * - F5 새로고침 시 토큰이 없으면 자동 복원 로직이 필요 (ensureAuthenticated 사용)
  *
- * @returns {boolean} - userId가 있으면 true, 없으면 false
+ * @returns {boolean} - access_token이 있으면 true, 없으면 false
  */
 function isAuthenticated() {
-    const userId = localStorage.getItem('userId');
-    return !!userId;  // userId가 있으면 true, 없으면 false
+    const token = getAccessToken();
+    return !!token;
+}
+
+/**
+ * 인증 상태 확인 및 자동 복원
+ * - F5 시 메모리 토큰 없으면 RT로 갱신 시도
+ * - 복원 실패 시 로그인 페이지로 리다이렉트
+ *
+ * 사용법: 보호된 페이지의 init() 함수 시작 부분에서 호출
+ * ```
+ * async function init() {
+ *     const authenticated = await ensureAuthenticated();
+ *     if (!authenticated) return;
+ *     // ... 기존 로직
+ * }
+ * ```
+ *
+ * @returns {Promise<boolean>} - 인증 성공 여부
+ */
+async function ensureAuthenticated() {
+    if (!getAccessToken()) {
+        const refreshed = await refreshAccessToken();
+        if (!refreshed) {
+            window.location.href = LOGIN_URL;
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
  * 현재 사용자 ID 조회
  *
- * HttpOnly Cookie는 JavaScript에서 JWT 파싱 불가
- * 로그인 시 localStorage에 저장된 userId 사용
+ * 메모리의 access_token을 JWT 디코딩하여 userId 추출
  *
  * @returns {number|null}
  */
 function getCurrentUserId() {
-    const userId = localStorage.getItem('userId');
+    const token = getAccessToken();
 
-    if (!userId) {
-        console.warn('userId not found in localStorage');
+    if (!token) {
+        console.warn('Access token not found in memory');
         return null;
     }
 
-    // 문자열을 숫자로 변환
-    const userIdNumber = parseInt(userId, 10);
-
-    if (isNaN(userIdNumber)) {
-        console.error('Invalid userId in localStorage:', userId);
-        return null;
-    }
-
-    return userIdNumber;
+    return getUserIdFromToken(token);
 }
 
 /**
