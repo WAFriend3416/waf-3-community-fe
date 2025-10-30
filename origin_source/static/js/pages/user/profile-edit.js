@@ -215,21 +215,58 @@
         console.log('[DEBUG] 이미지 변경 요청');
       }
 
-      // CSRF 토큰 추출
-      const csrfToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('XSRF-TOKEN='))
-        ?.split('=')[1];
+      // Access Token 가져오기
+      const accessToken = getAccessToken();
+
+      // CSRF 토큰 가져오기 (getCsrfToken from api.js)
+      const csrfToken = getCsrfToken();
+
+      // 디버깅: 토큰 상태 확인
+      console.log('[Profile Edit] Access Token:', accessToken ? `${accessToken.substring(0, 20)}...` : 'NULL');
+      console.log('[Profile Edit] CSRF Token:', csrfToken ? 'EXISTS' : 'NULL');
+
+      if (!accessToken) {
+        Toast.error('인증 정보가 없습니다. 다시 로그인해주세요.', '인증 오류');
+        setTimeout(() => {
+          window.location.href = '/pages/user/login.html';
+        }, 2000);
+        return;
+      }
+
+      // 헤더 구성 (CSRF 토큰이 있을 때만 추가)
+      const headers = {
+        'Authorization': `Bearer ${accessToken}`
+      };
+      if (csrfToken) {
+        headers['X-XSRF-TOKEN'] = csrfToken;
+      }
 
       // API 호출 (multipart/form-data이므로 fetch 직접 사용)
       const response = await fetch(`${CONFIG.API_BASE_URL}/users/${state.userId}`, {
         method: 'PATCH',
-        headers: {
-          'X-XSRF-TOKEN': csrfToken  // CSRF 토큰 헤더 추가
-        },
+        headers: headers,
         credentials: 'include',  // HttpOnly Cookie 자동 전송
         body: formData  // Content-Type 자동 설정 (multipart/form-data)
       });
+
+      // 401 Unauthorized - 토큰 갱신 후 재시도
+      if (response.status === 401) {
+        console.log('[Profile Edit] 401 Unauthorized, attempting token refresh...');
+        const refreshed = await refreshAccessToken();
+
+        if (refreshed) {
+          // 토큰 갱신 성공 - 재시도
+          console.log('[Profile Edit] Token refreshed, retrying...');
+          return handleSaveProfile(e);  // 재귀 호출로 재시도
+        } else {
+          // 토큰 갱신 실패 - 로그인 페이지로
+          Toast.error('인증이 만료되었습니다. 다시 로그인해주세요.', '인증 만료');
+          setTimeout(() => {
+            window.location.href = '/pages/user/login.html';
+          }, 2000);
+          return;
+        }
+      }
 
       if (response.status === 204) {
         Toast.success('프로필이 수정되었습니다.', '수정 완료', 3000, () => {
@@ -248,8 +285,9 @@
         throw new Error(data.message);
       }
     } catch (error) {
-      console.error('Failed to update profile:', error);
-      Toast.error(translateErrorCode(error.message) || '프로필 수정에 실패했습니다.', '오류');
+      console.error('[Profile Edit] Failed to update profile:', error);
+      const errorMessage = translateErrorCode(error.message) || '프로필 수정에 실패했습니다.';
+      Toast.error(errorMessage, '오류');
       state.isSubmitting = false;
       elements.saveButton.disabled = false;
       elements.saveButton.textContent = '저장';

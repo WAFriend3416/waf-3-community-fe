@@ -498,7 +498,7 @@
   box-shadow: var(--shadow-lg);
   min-width: 200px;
   padding: var(--spacing-2);
-  z-index: var(--z-index-dropdown);
+  z-index: var(--z-dropdown);
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px);

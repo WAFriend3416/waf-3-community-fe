@@ -44,8 +44,44 @@
     <div class="header__container">
       <h1 class="header__title">아무 말 대잔치</h1>
       <div class="header__auth">
-        <a href="/pages/user/login.html" class="btn btn--secondary">로그인</a>
-        <a href="/pages/user/register.html" class="btn btn--primary">회원가입</a>
+        <!-- 비로그인 상태 -->
+        <div data-auth="guest" style="display: none;">
+          <a href="/pages/user/login.html" class="btn btn--secondary">로그인</a>
+          <a href="/pages/user/register.html" class="btn btn--primary">회원가입</a>
+        </div>
+
+        <!-- 로그인 상태 -->
+        <div data-auth="authenticated" style="display: none; align-items: center; gap: 12px;">
+          <a href="/pages/board/list.html" class="btn btn--secondary">커뮤니티</a>
+
+          <!-- 프로필 메뉴 -->
+          <div class="profile-menu">
+            <button class="header__profile" data-action="toggle-menu" aria-label="프로필 메뉴">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" alt="프로필" class="header__profile-image" data-profile="image" loading="lazy">
+              <span class="header__profile-name" data-profile="nickname">사용자</span>
+            </button>
+            <div class="profile-menu__dropdown" data-dropdown="profile">
+              <a href="/pages/user/profile-edit.html" class="profile-menu__item" data-action="profile-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+                </svg>
+                프로필 수정
+              </a>
+              <a href="/pages/user/password-change.html" class="profile-menu__item" data-action="profile-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 8H17V6C17 3.24 14.76 1 12 1C9.24 1 7 3.24 7 6V8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM12 17C10.9 17 10 16.1 10 15C10 13.9 10.9 13 12 13C13.1 13 14 13.9 14 15C14 16.1 13.1 17 12 17ZM15.1 8H8.9V6C8.9 4.29 10.29 2.9 12 2.9C13.71 2.9 15.1 4.29 15.1 6V8Z" fill="currentColor"/>
+                </svg>
+                비밀번호 변경
+              </a>
+              <button class="profile-menu__item profile-menu__item--danger" data-action="logout">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 7L15.59 8.41L18.17 11H8V13H18.17L15.59 15.59L17 17L22 12L17 7ZM4 5H12V3H4C2.9 3 2 3.9 2 5V19C2 20.1 2.9 21 4 21H12V19H4V5Z" fill="currentColor"/>
+                </svg>
+                로그아웃
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -172,6 +208,9 @@
       </p>
     </div>
   </footer>
+
+  <!-- Common Scripts -->
+  <script src="/js/common/api.js"></script>
 
   <!-- Page Script -->
   <script src="/js/pages/home/index.js"></script>
