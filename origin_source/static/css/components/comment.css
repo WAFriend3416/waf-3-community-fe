@@ -69,11 +69,32 @@
 .comment-form__footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: var(--spacing-2);
   margin-top: var(--spacing-3);
 }
 
+.comment-form__counter {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  transition: color var(--transition-fast);
+}
+
+.comment-form__counter--warning {
+  color: var(--color-warning);
+}
+
+.comment-form__counter--error {
+  color: var(--color-error);
+}
+
+.comment-form__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+/* Legacy support */
 .comment-form__count {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);

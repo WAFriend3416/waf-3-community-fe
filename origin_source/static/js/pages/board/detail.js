@@ -50,6 +50,7 @@
     // Comment elements
     commentForm: null,
     commentTextarea: null,
+    commentCounter: null,
     commentsList: null,
     commentsEmpty: null,
 
@@ -104,6 +105,7 @@
     // Comment elements
     elements.commentForm = document.querySelector('[data-form="comment"]');
     elements.commentTextarea = document.querySelector('[data-field="comment"]');
+    elements.commentCounter = document.querySelector('[data-counter="comment"]');
     elements.commentsList = document.querySelector('[data-list="comments"]');
     elements.commentsEmpty = document.querySelector('[data-empty="comments"]');
 
@@ -149,6 +151,11 @@
       if (cancelButton) {
         cancelButton.addEventListener('click', handleCancelEdit);
       }
+    }
+
+    // Comment textarea - 글자수 카운터
+    if (elements.commentTextarea) {
+      elements.commentTextarea.addEventListener('input', updateCommentCounter);
     }
 
     // Comment actions (event delegation)
@@ -341,14 +348,12 @@
 
     const content = elements.commentTextarea.value.trim();
 
-    // 클라이언트 검증 (200자 제한)
-    if (!content) {
-      Toast.error('댓글 내용을 입력해주세요.', '입력 오류');
-      return;
-    }
-
-    if (content.length > 200) {
-      Toast.error('댓글은 200자 이하로 입력해주세요.', '입력 오류');
+    // 클라이언트 검증 (validation.js 활용)
+    if (!isValidComment(content)) {
+      const errorMsg = !content
+        ? '댓글 내용을 입력해주세요.'
+        : '댓글은 200자 이하로 입력해주세요.';
+      Toast.error(errorMsg, '입력 오류');
       return;
     }
 
@@ -386,6 +391,7 @@
       // 폼 초기화 (작성 모드만)
       if (!state.editingCommentId) {
         elements.commentTextarea.value = '';
+        updateCommentCounter();  // 글자수 카운터 리셋
       }
 
     } catch (error) {
@@ -444,6 +450,9 @@
     // 댓글 내용을 textarea에 채우기
     elements.commentTextarea.value = comment.content;
     elements.commentTextarea.focus();
+
+    // 글자수 카운터 업데이트
+    updateCommentCounter();
 
     // 수정 모드 활성화
     state.editingCommentId = comment.commentId;
@@ -541,9 +550,33 @@
   }
 
   /**
+   * 댓글 글자수 카운터 업데이트
+   * 실시간으로 입력한 글자수를 표시하고 200자 초과 시 경고 스타일 적용
+   */
+  function updateCommentCounter() {
+    if (!elements.commentTextarea || !elements.commentCounter) return;
+
+    const length = elements.commentTextarea.value.length;
+    elements.commentCounter.textContent = length;
+
+    // 글자수에 따라 스타일 변경
+    const counterElement = elements.commentCounter.parentElement;
+    if (length > 200) {
+      counterElement.classList.add('comment-form__counter--error');
+      counterElement.classList.remove('comment-form__counter--warning');
+    } else if (length > 180) {
+      counterElement.classList.add('comment-form__counter--warning');
+      counterElement.classList.remove('comment-form__counter--error');
+    } else {
+      counterElement.classList.remove('comment-form__counter--warning', 'comment-form__counter--error');
+    }
+  }
+
+  /**
    * 댓글 폼 리셋
    * - 수정 모드 해제
    * - textarea 초기화
+   * - 글자수 카운터 리셋
    * - 버튼 텍스트 "댓글 등록"으로 변경
    * - 취소 버튼 숨김
    */
@@ -553,6 +586,9 @@
     if (elements.commentTextarea) {
       elements.commentTextarea.value = '';
     }
+
+    // 글자수 카운터 리셋
+    updateCommentCounter();
 
     const submitButton = elements.commentForm?.querySelector('[data-action="submit-comment"]');
     if (submitButton) {

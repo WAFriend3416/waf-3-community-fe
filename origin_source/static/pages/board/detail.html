@@ -159,15 +159,21 @@
             placeholder="댓글을 입력해주세요"
             rows="3"
             data-field="comment"
+            maxlength="200"
             required
           ></textarea>
-          <div class="comment-form__actions">
-            <button type="submit" class="btn btn--primary" data-action="submit-comment">
-              댓글 등록
-            </button>
-            <button type="button" class="btn btn--secondary" data-action="cancel-comment" style="display: none;">
-              취소
-            </button>
+          <div class="comment-form__footer">
+            <div class="comment-form__counter">
+              <span data-counter="comment">0</span> / 200
+            </div>
+            <div class="comment-form__actions">
+              <button type="submit" class="btn btn--primary" data-action="submit-comment">
+                댓글 등록
+              </button>
+              <button type="button" class="btn btn--secondary" data-action="cancel-comment" style="display: none;">
+                취소
+              </button>
+            </div>
           </div>
         </form>
 
