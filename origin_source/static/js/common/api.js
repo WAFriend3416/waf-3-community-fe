@@ -180,7 +180,7 @@ let refreshTokenPromise = null;
  * Access Token 갱신
  * POST /auth/refresh_token 호출
  * - refresh_token은 HttpOnly Cookie로 자동 전송
- * - 응답 body의 access_token을 메모리에 저장
+ * - 응답 body의 accessToken을 localStorage에 저장
  * - 동시 호출 방지: 여러 요청이 동시에 갱신을 시도해도 한 번만 실행
  *
  * @returns {Promise<boolean>} 갱신 성공 여부
@@ -202,12 +202,12 @@ async function refreshAccessToken() {
 
             if (response.ok) {
                 const data = await response.json();
-                // 응답 body의 access_token을 메모리에 저장
-                if (data.data && data.data.access_token) {
-                    setAccessToken(data.data.access_token);
+                // 응답 body의 accessToken을 localStorage에 저장
+                if (data.data && data.data.accessToken) {
+                    setAccessToken(data.data.accessToken);
                     return true;
                 }
-                console.error('Token refresh response missing access_token:', data);
+                console.error('Token refresh response missing accessToken:', data);
                 return false;
             }
             return false;
@@ -226,7 +226,7 @@ async function refreshAccessToken() {
 /**
  * 로그아웃
  * - POST /auth/logout 호출 (서버에서 refresh_token 무효화 및 Cookie 삭제)
- * - 메모리에서 access_token 제거
+ * - localStorage에서 access_token 제거
  *
  * 참고: /auth/logout은 인증 필요 (SecurityConfig)
  */
@@ -241,7 +241,7 @@ async function logout() {
         console.error('Logout request failed:', error);
     }
 
-    // 메모리에서 access_token 제거
+    // localStorage에서 access_token 제거
     removeAccessToken();
 
     // 서버가 Cookie 삭제 처리 (MaxAge=0)

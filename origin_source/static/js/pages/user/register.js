@@ -189,9 +189,9 @@
             const data = await response.json();
 
             if (response.ok) {
-                // 응답 body의 access_token을 메모리에 저장
-                if (data.data && data.data.access_token) {
-                    setAccessToken(data.data.access_token);
+                // 응답 body의 accessToken을 localStorage에 저장
+                if (data.data && data.data.accessToken) {
+                    setAccessToken(data.data.accessToken);
                 }
 
                 // 회원가입 성공 - 자동 로그인되어 게시글 목록으로 이동
