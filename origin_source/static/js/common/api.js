@@ -102,7 +102,7 @@ async function fetchWithAuth(url, options = {}) {
         ...options,
         credentials: 'include',  // HttpOnly Cookie 자동 전송
         headers: {
-            'Content-Type': 'application/json',
+            ...(options.body && { 'Content-Type': 'application/json' }),  // body 있을 때만 Content-Type 추가
             ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),  // Access Token 추가
             ...(csrfToken && { 'X-XSRF-TOKEN': csrfToken }),  // CSRF 토큰 추가
             ...options.headers

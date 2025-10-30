@@ -424,6 +424,14 @@
     if (!confirmed2) return;
 
     try {
+      // 디버깅 로그
+      console.log('회원 탈퇴 요청:', {
+        url: `/users/${state.userId}`,
+        userId: state.userId,
+        hasAccessToken: !!getAccessToken(),
+        method: 'PUT'
+      });
+
       await fetchWithAuth(`/users/${state.userId}`, {
         method: 'PUT'
       });
