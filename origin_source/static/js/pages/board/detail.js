@@ -722,17 +722,11 @@
     //
     // 3. API 명세 업데이트:
     //    - docs/be/API.md Section 3.2 응답 예시에 isLikedByCurrentUser 추가
-    //
-    // [프론트엔드 최종 구현 (백엔드 수정 후)]
-    // state.isLiked = post.isLikedByCurrentUser || false;
-    // updateLikeButton(state.isLiked);
-    //
-    // [현재 임시 코드 (백엔드 수정 전)]
-    // - 무조건 false로 초기화
-    // - 사용자가 좋아요 버튼 클릭 시 에러 코드(LIKE-001)로 상태 추론
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    state.isLiked = false;  // 백엔드 수정 후: post.isLikedByCurrentUser || false
-    updateLikeButton(false);
+    // 백엔드에서 현재 사용자의 좋아요 여부 반환 (isLikedByCurrentUser)
+    // - 로그인 상태: true/false
+    // - 비로그인 상태: null (기본값 false 처리)
+    state.isLiked = post.isLikedByCurrentUser || false;
+    updateLikeButton(state.isLiked);
   }
 
   function renderComment(comment) {
