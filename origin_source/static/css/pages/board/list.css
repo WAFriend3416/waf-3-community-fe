@@ -139,3 +139,114 @@ html {
     padding: 0 var(--spacing-4);
   }
 }
+
+/* ========================================
+   Floating Action Buttons (Desktop Only)
+   ======================================== */
+
+.floating-buttons {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(100px);
+  transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+}
+
+.floating-buttons--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.floating-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-brand-primary);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: visible;
+}
+
+.floating-btn:hover {
+  background: var(--color-brand-hover);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.floating-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.floating-btn svg {
+  flex-shrink: 0;
+  transition: margin 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Scroll to Top Button */
+.floating-btn--scroll-top {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-default);
+}
+
+.floating-btn--scroll-top:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-brand-primary);
+  color: var(--color-brand-primary);
+}
+
+/* Write Post Button (Expandable) */
+.floating-btn--write {
+  background: var(--color-brand-primary);
+  justify-content: flex-start;
+  padding: 0 16px;
+}
+
+.floating-btn--write .floating-btn__text {
+  max-width: 0;
+  white-space: nowrap;
+  opacity: 0;
+  overflow: hidden;
+  margin-left: 0;
+  transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.floating-btn--write:hover {
+  width: auto;
+  padding: 0 20px 0 16px;
+  border-radius: 28px;
+}
+
+.floating-btn--write:hover svg {
+  flex-shrink: 0;
+}
+
+.floating-btn--write:hover .floating-btn__text {
+  max-width: 150px;
+  opacity: 1;
+  margin-left: 8px;
+}
+
+/* Mobile: Hide floating buttons */
+@media (max-width: 768px) {
+  .floating-buttons {
+    display: none !important;
+  }
+}

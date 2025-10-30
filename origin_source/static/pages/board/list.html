@@ -128,6 +128,29 @@
     </div>
   </main>
 
+  <!-- Floating Action Buttons (Desktop Only) -->
+  <div class="floating-buttons" data-floating-buttons style="display: none;">
+    <!-- Scroll to Top Button -->
+    <button class="floating-btn floating-btn--scroll-top"
+            data-action="scroll-to-top"
+            aria-label="맨 위로 이동">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M12 19V5M5 12L12 5L19 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <!-- Write Post Button (Expandable) -->
+    <button class="floating-btn floating-btn--write"
+            data-action="floating-write-post"
+            aria-label="게시글 작성">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M18.5 2.5C18.8978 2.1022 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.1022 21.5 2.5C21.8978 2.8978 22.1213 3.4374 22.1213 4C22.1213 4.5626 21.8978 5.1022 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="floating-btn__text">게시글 작성</span>
+    </button>
+  </div>
+
   <!-- Common Scripts -->
   <script src="/js/common/api.js"></script>
   <script src="/js/common/validation.js"></script>

@@ -58,6 +58,10 @@
     elements.loadMoreContainer = document.querySelector('.load-more-container');
     elements.profileImage = document.querySelector('[data-profile="image"]');
     elements.profileDropdown = document.querySelector('[data-dropdown="profile"]');
+    // Floating buttons
+    elements.floatingButtons = document.querySelector('[data-floating-buttons]');
+    elements.scrollTopBtn = document.querySelector('[data-action="scroll-to-top"]');
+    elements.floatingWriteBtn = document.querySelector('[data-action="floating-write-post"]');
   }
 
   // ============================================
@@ -81,6 +85,17 @@
     if (elements.profileDropdown) {
       elements.profileDropdown.addEventListener('click', handleProfileMenuClick);
     }
+
+    // Floating buttons
+    if (elements.scrollTopBtn) {
+      elements.scrollTopBtn.addEventListener('click', handleScrollToTop);
+    }
+    if (elements.floatingWriteBtn) {
+      elements.floatingWriteBtn.addEventListener('click', handleWriteClick);
+    }
+
+    // Scroll detection for floating buttons
+    window.addEventListener('scroll', debounce(handleFloatingButtonsVisibility, 100));
   }
 
   // ============================================
@@ -465,6 +480,45 @@
       clearTimeout(timeout);
       timeout = setTimeout(later, wait);
     };
+  }
+
+  // ============================================
+  // Floating Buttons
+  // ============================================
+  /**
+   * Scroll to top handler
+   */
+  function handleScrollToTop() {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }
+
+  /**
+   * Show/hide floating buttons based on scroll position
+   * Trigger: 300px from top
+   */
+  function handleFloatingButtonsVisibility() {
+    if (!elements.floatingButtons) return;
+
+    const scrollY = window.scrollY;
+    const triggerPoint = 300;
+
+    if (scrollY > triggerPoint) {
+      elements.floatingButtons.style.display = 'flex';
+      // Force reflow for animation
+      void elements.floatingButtons.offsetWidth;
+      elements.floatingButtons.classList.add('floating-buttons--visible');
+    } else {
+      elements.floatingButtons.classList.remove('floating-buttons--visible');
+      // Hide after animation completes (matches CSS transition duration)
+      setTimeout(() => {
+        if (!elements.floatingButtons.classList.contains('floating-buttons--visible')) {
+          elements.floatingButtons.style.display = 'none';
+        }
+      }, 400);
+    }
   }
 
   // ============================================
