@@ -522,6 +522,38 @@
   background-color: rgba(239, 68, 68, 0.1);
 }
 
+/* ========================================
+   Home Icon Button
+   ======================================== */
+
+.header__home {
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  padding: var(--spacing-2);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.header__home:hover {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-brand-primary);
+}
+
+.header__home svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* ========================================
+   Responsive Design (Small Screens)
+   ======================================== */
+
 /* Hide on very small screens */
 @media (max-width: 480px) {
   .header__logo-text {
