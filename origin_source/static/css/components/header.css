@@ -64,6 +64,30 @@
   grid-column: 1;
 }
 
+/* Home Button */
+.header__home {
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  padding: var(--spacing-2);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.header__home:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.header__home svg {
+  width: 24px;
+  height: 24px;
+}
+
 /* Back Button */
 .header__back {
   background: none;
