@@ -37,12 +37,17 @@
         const response = await fetch('http://localhost:8080/stats', {
             credentials: 'include'
         });
-        
+
         if (response.ok) {
             const data = await response.json();
-            return data.data;
+            // 백엔드 응답 형식에 맞춰 변환
+            return {
+                posts: data.data.totalPosts,
+                members: data.data.totalUsers,
+                comments: data.data.totalComments
+            };
         }
-        
+
         throw new Error('Failed to fetch stats');
     }
 
