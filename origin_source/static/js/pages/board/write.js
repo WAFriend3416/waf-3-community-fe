@@ -55,11 +55,7 @@
   // ============================================
   // Initialization
   // ============================================
-  async function init() {
-    // F5 시 토큰 자동 복원
-    const authenticated = await ensureAuthenticated();
-    if (!authenticated) return;
-
+  function init() {
     cacheElements();
     cleanupInlineStyles();  // 인라인 스타일 정리
     bindEvents();

@@ -93,16 +93,6 @@
       renderSkeletonCards();
     }
 
-    // 토큰 자동 복원 시도 (로그인 후 페이지 이동 시 in-memory 토큰 복원)
-    if (!getAccessToken()) {
-      try {
-        await refreshAccessToken();
-      } catch (error) {
-        // 토큰 복원 실패는 무시 (비로그인 상태로 진행)
-        console.log('Token refresh failed, continuing as guest');
-      }
-    }
-
     // 프로필 이미지 로드
     await loadUserProfile();
 

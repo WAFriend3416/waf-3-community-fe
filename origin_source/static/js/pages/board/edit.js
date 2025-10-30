@@ -46,11 +46,7 @@
     imageError: null
   };
 
-  async function init() {
-    // F5 시 토큰 자동 복원
-    const authenticated = await ensureAuthenticated();
-    if (!authenticated) return;
-
+  function init() {
     const urlParams = new URLSearchParams(window.location.search);
     state.postId = urlParams.get('id');
 

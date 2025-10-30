@@ -1,6 +1,6 @@
 /**
  * API Utility
- * in-memory Access Token + HttpOnly Cookie Refresh Token 인증
+ * localStorage Access Token + HttpOnly Cookie Refresh Token 인증
  * 참조: @CLAUDE.md Section 3.1, 3.2
  * 참조: @docs/fe/FRONTEND_GUIDE.md Section 2
  */
@@ -11,22 +11,15 @@ const API_BASE_URL = 'http://localhost:8080';
 const LOGIN_URL = '/pages/user/login.html';
 
 // ========================================
-// in-memory Access Token 관리
+// localStorage Access Token 관리
 // ========================================
-
-/**
- * Access Token 저장소 (순수 in-memory)
- * - F5 새로고침 시 null로 초기화됨
- * - Refresh Token(HttpOnly Cookie)으로 자동 복원
- */
-let accessToken = null;
 
 /**
  * Access Token 조회
  * @returns {string|null}
  */
 function getAccessToken() {
-    return accessToken;
+    return localStorage.getItem('access_token');
 }
 
 /**
@@ -34,14 +27,14 @@ function getAccessToken() {
  * @param {string} token - JWT Access Token
  */
 function setAccessToken(token) {
-    accessToken = token;
+    localStorage.setItem('access_token', token);
 }
 
 /**
  * Access Token 제거
  */
 function removeAccessToken() {
-    accessToken = null;
+    localStorage.removeItem('access_token');
 }
 
 // ========================================
@@ -257,8 +250,7 @@ async function logout() {
 /**
  * 로그인 여부 확인
  *
- * 메모리의 access_token 존재 여부로 로그인 상태 판단
- * - F5 새로고침 시 토큰이 없으면 자동 복원 로직이 필요 (ensureAuthenticated 사용)
+ * localStorage의 access_token 존재 여부로 로그인 상태 판단
  *
  * @returns {boolean} - access_token이 있으면 true, 없으면 false
  */
@@ -268,36 +260,9 @@ function isAuthenticated() {
 }
 
 /**
- * 인증 상태 확인 및 자동 복원
- * - F5 시 메모리 토큰 없으면 RT로 갱신 시도
- * - 복원 실패 시 로그인 페이지로 리다이렉트
- *
- * 사용법: 보호된 페이지의 init() 함수 시작 부분에서 호출
- * ```
- * async function init() {
- *     const authenticated = await ensureAuthenticated();
- *     if (!authenticated) return;
- *     // ... 기존 로직
- * }
- * ```
- *
- * @returns {Promise<boolean>} - 인증 성공 여부
- */
-async function ensureAuthenticated() {
-    if (!getAccessToken()) {
-        const refreshed = await refreshAccessToken();
-        if (!refreshed) {
-            window.location.href = LOGIN_URL;
-            return false;
-        }
-    }
-    return true;
-}
-
-/**
  * 현재 사용자 ID 조회
  *
- * 메모리의 access_token을 JWT 디코딩하여 userId 추출
+ * localStorage의 access_token을 JWT 디코딩하여 userId 추출
  *
  * @returns {number|null}
  */

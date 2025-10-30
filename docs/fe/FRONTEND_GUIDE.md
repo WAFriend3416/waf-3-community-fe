@@ -60,7 +60,7 @@ const data = await response.json();
 // ✅ refresh_token → 서버가 HttpOnly Cookie 자동 설정
 
 if (data.data && data.data.access_token) {
-  setAccessToken(data.data.access_token); // in-memory 저장
+  setAccessToken(data.data.access_token); // localStorage 저장
 }
 
 // 인증 API 호출
@@ -69,7 +69,7 @@ const posts = await fetch('http://localhost:8080/posts', {
 });
 ```
 
-**참조**: Section 2 인증 시스템 (in-memory + JWT 디코딩 상세)
+**참조**: Section 2 인증 시스템 (localStorage + JWT 디코딩 상세)
 
 ### 1.3 공통 헤더
 
@@ -87,38 +87,34 @@ const posts = await fetch('http://localhost:8080/posts', {
 
 ## 2. 인증 시스템
 
-⚠️ **최신 변경**: in-memory Access Token + JWT 디코딩 방식 (2025-10-30)
+⚠️ **최신 변경**: localStorage Access Token + JWT 디코딩 방식 (2025-10-30)
 
-### 2.1 in-memory + JWT 디코딩 방식
+### 2.1 localStorage + JWT 디코딩 방식
 
-**핵심 전략**: Short-lived AT (메모리) + Long-lived RT (HttpOnly Cookie)
+**핵심 전략**: localStorage AT + HttpOnly Cookie RT
 
 **Access Token (AT)**:
-- 저장 위치: JavaScript 모듈 스코프 변수 (순수 in-memory)
-- F5 시: 메모리 초기화 → Refresh Token으로 자동 복원
+- 저장 위치: localStorage (페이지 새로고침/이동 시에도 유지)
 - JWT 디코딩: 클라이언트에서 userId 추출 (서버 의존성 감소)
+- 유효기간: 30분 (서버에서 설정)
 
 **Refresh Token (RT)**:
 - 저장 위치: HttpOnly Cookie (XSS 공격 방어)
 - 유효기간: 7일
 - 자동 전송: credentials: 'include'
 
-**F5 새로고침 플로우**:
-```
-페이지 로드 → AT 존재?
-              ↓ No
-           RT로 갱신 → 성공: 로그인 유지
-                      ↓ 실패
-                   로그인 페이지
-```
+**F5 새로고침/페이지 이동**:
+- localStorage에 AT 자동 유지
+- 별도 복원 로직 불필요
+- MPA(Multi-Page Application)에서 정상 작동
 
 ### 2.2 토큰 관리 함수 (api.js)
 
 **구현 위치**: `origin_source/static/js/common/api.js`
 
 ```javascript
-// in-memory 토큰 관리
-getAccessToken()          // 메모리에서 AT 조회
+// localStorage 토큰 관리
+getAccessToken()          // localStorage에서 AT 조회
 setAccessToken(token)     // 로그인/회원가입/갱신 시 AT 저장
 removeAccessToken()       // 로그아웃 시 AT 제거
 
@@ -129,39 +125,20 @@ getUserIdFromToken(token) // JWT에서 userId 추출 (sub claim)
 // 인증 상태 확인
 isAuthenticated()         // AT 존재 여부 확인
 getCurrentUserId()        // JWT 디코딩으로 userId 추출
-ensureAuthenticated()     // F5 시 AT 없으면 RT로 자동 갱신
 ```
 
-### 2.3 F5 자동 복원 로직
-
-**보호된 페이지 초기화 패턴**:
-
-```javascript
-async function init() {
-  // F5 시 토큰 자동 복원
-  const authenticated = await ensureAuthenticated();
-  if (!authenticated) return; // 복원 실패 → 로그인 페이지
-
-  // ... 기존 로직
-}
-```
-
-**적용 페이지**:
-- `detail.js`, `edit.js`, `write.js` (게시글)
-- `profile-edit.js`, `password-change.js` (사용자)
-
-### 2.4 로그인/회원가입 응답 처리
+### 2.3 로그인/회원가입 응답 처리
 
 ```javascript
 // 로그인 성공 시
 const result = await response.json();
 if (result.data && result.data.access_token) {
-  setAccessToken(result.data.access_token); // 메모리 저장
+  setAccessToken(result.data.access_token); // localStorage 저장
 }
 // RT는 서버가 HttpOnly Cookie로 자동 설정
 ```
 
-### 2.5 토큰 갱신 자동화
+### 2.4 토큰 갱신 자동화
 
 **구현 위치**: `api.js::fetchWithAuth()`, `api.js::refreshAccessToken()`
 
@@ -172,20 +149,11 @@ if (result.data && result.data.access_token) {
 
 **참조**: [API.md Section 1.3](../be/API.md#13-액세스-토큰-재발급) (엔드포인트 명세)
 
-### 2.6 주요 API
+### 2.5 주요 API
 
 인증 API 3개: `/auth/login`, `/auth/logout`, `/auth/refresh_token`
 
 **참조**: [API.md Section 1 - 인증 API](../be/API.md#1-인증-authentication) ⭐ **엔드포인트 명세 SSOT**
-
-### 2.7 보안 이점
-
-| 항목 | 기존 (localStorage) | 현재 (in-memory + RT) |
-|------|---------------------|----------------------|
-| XSS 공격 시 | userId 조작 가능 | AT 탈취되어도 짧은 시간만 유효 |
-| CSRF 공격 | Cookie 보호 | 동일 (RT는 HttpOnly Cookie) |
-| F5 새로고침 | 로그인 유지 | RT로 자동 복원 → 로그인 유지 |
-| 탭 종료 | 로그인 유지 | RT로 복원 가능 (RT 유효 시)
 
 ---
 
@@ -570,3 +538,4 @@ A5. `PORT=8000 npm start` 또는 `.env` 파일 수정
 | 2025-10-20 | 3.0 | HttpOnly Cookie 전환 완료 (localStorage → credentials: 'include'), 페이지네이션 코드 중복 제거 (70줄 → 32줄) |
 | 2025-10-22 | 3.2 | Toast 알림 시스템 문서 추가 (Section 8) - API, 실전 예제, 접근성 가이드 |
 | 2025-10-30 | 4.0 | **인증 방식 변경**: in-memory AT + JWT 디코딩 (HttpOnly Cookie RT 유지), F5 자동 복원 로직, ensureAuthenticated() 함수 추가 |
+| 2025-10-30 | 5.0 | **인증 방식 재변경**: localStorage AT로 복귀 (MPA 호환성), in-memory 방식 제거, ensureAuthenticated() 제거, 페이지 이동 시 토큰 자동 유지 |
