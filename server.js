@@ -14,11 +14,7 @@ app.get('/', (req, res) => {
 
 // 404 처리
 app.use((req, res) => {
-  res.status(404).send(`
-    <h1>404 - 페이지를 찾을 수 없습니다</h1>
-    <p>요청한 경로: ${req.path}</p>
-    <a href="/">홈으로 돌아가기</a>
-  `);
+  res.status(404).sendFile(path.join(__dirname, 'origin_source/static/pages/errors/404.html'));
 });
 
 // 서버 시작
