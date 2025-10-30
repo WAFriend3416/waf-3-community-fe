@@ -122,9 +122,7 @@
 
   async function loadUserData() {
     try {
-      console.log('Loading user data for userId:', state.userId);
       const user = await fetchWithAuth(`/users/${state.userId}`);
-      console.log('User data loaded:', user);
 
       if (elements.nicknameInput && user.nickname) {
         elements.nicknameInput.value = user.nickname;
@@ -208,11 +206,9 @@
       if (state.removeExistingImage) {
         // 이미지 제거 신호 전송
         formData.append('removeImage', 'true');
-        console.log('[DEBUG] 이미지 제거 요청:', { removeImage: true });
       } else if (state.selectedFile) {
         // 새 이미지 업로드
         formData.append('profileImage', state.selectedFile);
-        console.log('[DEBUG] 이미지 변경 요청');
       }
 
       // Access Token 가져오기
@@ -220,10 +216,6 @@
 
       // CSRF 토큰 가져오기 (getCsrfToken from api.js)
       const csrfToken = getCsrfToken();
-
-      // 디버깅: 토큰 상태 확인
-      console.log('[Profile Edit] Access Token:', accessToken ? `${accessToken.substring(0, 20)}...` : 'NULL');
-      console.log('[Profile Edit] CSRF Token:', csrfToken ? 'EXISTS' : 'NULL');
 
       if (!accessToken) {
         Toast.error('인증 정보가 없습니다. 다시 로그인해주세요.', '인증 오류');
@@ -251,12 +243,10 @@
 
       // 401 Unauthorized - 토큰 갱신 후 재시도
       if (response.status === 401) {
-        console.log('[Profile Edit] 401 Unauthorized, attempting token refresh...');
         const refreshed = await refreshAccessToken();
 
         if (refreshed) {
           // 토큰 갱신 성공 - 재시도
-          console.log('[Profile Edit] Token refreshed, retrying...');
           return handleSaveProfile(e);  // 재귀 호출로 재시도
         } else {
           // 토큰 갱신 실패 - 로그인 페이지로
@@ -348,11 +338,6 @@
   function handleRemoveImage() {
     state.selectedFile = null;
     state.removeExistingImage = true;
-
-    console.log('[DEBUG] handleRemoveImage 호출:', {
-      selectedFile: state.selectedFile,
-      removeExistingImage: state.removeExistingImage
-    });
 
     // 기본 이미지로 변경
     elements.profileImage.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';

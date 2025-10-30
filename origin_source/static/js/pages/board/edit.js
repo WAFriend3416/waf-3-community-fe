@@ -262,13 +262,9 @@
       // 이미지 처리 (API.md Section 3.4 스펙 준수)
       if (state.removeExistingImage) {
         body.removeImage = true;  // 명시적 제거 신호
-        console.log('[DEBUG] 이미지 제거 요청:', { removeImage: true });
       } else if (state.uploadedImageId) {
         body.imageId = state.uploadedImageId;
-        console.log('[DEBUG] 이미지 변경 요청:', { imageId: state.uploadedImageId });
       }
-
-      console.log('[DEBUG] 게시글 수정 요청 body:', JSON.stringify(body, null, 2));
 
       await fetchWithAuth(`/posts/${state.postId}`, {
         method: 'PATCH',
@@ -319,12 +315,6 @@
     state.selectedFile = null;
     state.uploadedImageId = null;
     state.removeExistingImage = true;
-
-    console.log('[DEBUG] handleRemoveImage 호출:', {
-      selectedFile: state.selectedFile,
-      uploadedImageId: state.uploadedImageId,
-      removeExistingImage: state.removeExistingImage
-    });
 
     elements.previewImage.src = '';
     elements.previewImage.style.display = 'none';
