@@ -132,9 +132,13 @@
             const result = await response.json();
 
             if (response.ok) {
-                // 응답 body의 access_token을 메모리에 저장
+                // 응답 body의 access_token을 localStorage에 저장
+                console.log('[DEBUG] Login response:', result);
                 if (result.data && result.data.access_token) {
                     setAccessToken(result.data.access_token);
+                    console.log('[DEBUG] Token saved to localStorage:', localStorage.getItem('access_token') ? 'SUCCESS' : 'FAILED');
+                } else {
+                    console.warn('[DEBUG] No access_token in response:', result);
                 }
 
                 // 게시글 목록으로 리다이렉트 (replace로 히스토리에서 로그인 페이지 제거)

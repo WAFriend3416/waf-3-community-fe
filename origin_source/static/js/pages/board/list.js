@@ -387,8 +387,14 @@
     const profileMenu = document.querySelector('[data-auth="authenticated"]');
     const guestAuth = document.querySelector('[data-auth="guest"]');
 
-    if (!isAuthenticated()) {
+    const authenticated = isAuthenticated();
+    const token = getAccessToken();
+    console.log('[DEBUG] loadUserProfile - isAuthenticated:', authenticated);
+    console.log('[DEBUG] loadUserProfile - token:', token ? token.substring(0, 20) + '...' : 'null');
+
+    if (!authenticated) {
       // 비로그인: 로그인/회원가입 버튼 표시
+      console.log('[DEBUG] Not authenticated - showing guest buttons');
       if (profileMenu) profileMenu.style.display = 'none';
       if (guestAuth) guestAuth.style.display = 'flex';
 
@@ -400,6 +406,7 @@
     }
 
     // 로그인: 프로필 메뉴 표시
+    console.log('[DEBUG] Authenticated - showing profile menu');
     if (profileMenu) profileMenu.style.display = 'flex';
     if (guestAuth) guestAuth.style.display = 'none';
 
