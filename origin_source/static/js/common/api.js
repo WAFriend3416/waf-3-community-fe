@@ -96,12 +96,14 @@ function getUserIdFromToken(token) {
  */
 async function fetchWithAuth(url, options = {}) {
     const csrfToken = getCsrfToken();
+    const accessToken = getAccessToken();
 
     const config = {
         ...options,
         credentials: 'include',  // HttpOnly Cookie 자동 전송
         headers: {
             'Content-Type': 'application/json',
+            ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),  // Access Token 추가
             ...(csrfToken && { 'X-XSRF-TOKEN': csrfToken }),  // CSRF 토큰 추가
             ...options.headers
         }
@@ -286,10 +288,14 @@ function getCurrentUserId() {
  */
 async function uploadImage(file) {
     const csrfToken = getCsrfToken();
+    const accessToken = getAccessToken();
     const formData = new FormData();
     formData.append('file', file);
 
     const headers = {};
+    if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+    }
     if (csrfToken) {
         headers['X-XSRF-TOKEN'] = csrfToken;
     }
@@ -297,7 +303,7 @@ async function uploadImage(file) {
     const response = await fetch(`${API_BASE_URL}/images`, {
         method: 'POST',
         credentials: 'include',  // Cookie 자동 전송
-        headers: headers,  // CSRF 토큰 추가
+        headers: headers,  // Authorization + CSRF 토큰 추가
         body: formData  // Content-Type 자동 설정 (multipart/form-data)
     });
 
