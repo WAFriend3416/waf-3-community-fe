@@ -46,7 +46,7 @@
     imageError: null
   };
 
-  function init() {
+  async function init() {
     const urlParams = new URLSearchParams(window.location.search);
     state.postId = urlParams.get('id');
 
@@ -61,8 +61,8 @@
     cacheElements();
     cleanupInlineStyles();  // 인라인 스타일 정리
     bindEvents();
-    loadUserProfile();  // 프로필 로드
-    setupBackNavigation();  // 브라우저 뒤로가기 처리
+    await initAuthHeader();  // 프로필 로드 (auth-header.js 공통 모듈)
+    enableUnsavedChangesWarning(() => state.hasChanges);  // 브라우저 뒤로가기 처리 (navigation.js 공통 모듈)
     loadPost();
   }
 
@@ -130,64 +130,9 @@
   // ============================================
   // Profile Load
   // ============================================
-  async function loadUserProfile() {
-    const profileMenu = document.querySelector('[data-auth="authenticated"]');
+  // loadUserProfile은 auth-header.js의 initAuthHeader() 사용
 
-    if (!isAuthenticated()) {
-      // 비로그인: 프로필 메뉴 숨김
-      if (profileMenu) profileMenu.style.display = 'none';
-      return;
-    }
-
-    // 로그인: 프로필 메뉴 표시
-    if (profileMenu) profileMenu.style.display = 'flex';
-
-    try {
-      const userId = getCurrentUserId();
-
-      // userId 검증
-      if (!userId) {
-        console.warn('Invalid userId, skipping profile load');
-        return;
-      }
-
-      const user = await fetchWithAuth(`/users/${userId}`);
-
-      if (user) {
-        // 프로필 이미지 업데이트
-        const profileImage = document.querySelector('[data-profile="image"]');
-        const profileName = document.querySelector('[data-profile="nickname"]');
-
-        if (profileImage && user.profileImage) {
-          profileImage.src = user.profileImage;
-        }
-
-        if (profileName && user.nickname) {
-          profileName.textContent = user.nickname;
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load user profile:', error);
-    }
-  }
-
-  function handleProfileMenuClick(e) {
-    const logoutTarget = e.target.closest('[data-action="logout"]');
-    if (logoutTarget) {
-      e.preventDefault();
-      handleLogout();
-      return;
-    }
-
-    const profileLink = e.target.closest('[data-action="profile-link"], a.profile-menu__item');
-    if (profileLink && profileLink.tagName === 'A') {
-      e.preventDefault();
-      const href = profileLink.getAttribute('href');
-      if (href) {
-        window.location.href = href;
-      }
-    }
-  }
+  // handleProfileMenuClick은 auth-header.js 공통 모듈 사용
 
   async function loadPost() {
     try {
@@ -272,7 +217,7 @@
       });
 
       // 성공 - 토스트 메시지 후 상세 페이지로 이동
-      state.hasChanges = false;  // beforeunload 경고 건너뛰기
+      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
       Toast.success('게시글이 수정되었습니다.', '수정 완료', 1200, () => {
         window.location.replace(`${CONFIG.DETAIL_URL}?id=${state.postId}`);  // replace()로 history 중복 방지
       });
@@ -326,33 +271,7 @@
     checkForChanges();
   }
 
-  function handleProfileMenuClick(e) {
-    const logoutTarget = e.target.closest('[data-action="logout"]');
-    if (logoutTarget) {
-      e.preventDefault();
-      handleLogout();
-      return;
-    }
-
-    const profileLink = e.target.closest('[data-action="profile-link"]');
-    if (profileLink) {
-      e.preventDefault();
-      const href = profileLink.getAttribute('href');
-      if (href) {
-        window.location.href = href;  // Changed from replace() to preserve history
-      }
-    }
-  }
-
-  async function handleLogout() {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      window.location.replace(CONFIG.LOGIN_URL);
-    }
-  }
+  // handleLogout은 auth-header.js의 performLogout() 사용
 
   async function handleBack(e) {
     e.preventDefault();
@@ -362,7 +281,7 @@
         '저장하지 않은 변경사항이 있습니다. 페이지를 나가시겠습니까?'
       );
       if (!confirmed) return;
-      state.hasChanges = false;  // beforeunload 건너뛰기
+      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
     }
     window.location.replace(`${CONFIG.DETAIL_URL}?id=${state.postId}`);  // replace()로 history 중복 방지
   }
@@ -375,7 +294,7 @@
         '저장하지 않은 변경사항이 있습니다. 취소하시겠습니까?'
       );
       if (!confirmed) return;
-      state.hasChanges = false;  // beforeunload 건너뛰기
+      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
     }
     window.location.replace(`${CONFIG.DETAIL_URL}?id=${state.postId}`);  // replace()로 history 중복 방지
   }
@@ -406,20 +325,7 @@
     }
   }
 
-  /**
-   * 브라우저 뒤로가기 처리
-   */
-  function setupBackNavigation() {
-    // beforeunload: 페이지 떠날 때
-    window.addEventListener('beforeunload', (event) => {
-      // 변경사항 있으면 브라우저 기본 경고
-      if (state.hasChanges) {
-        event.preventDefault();
-        event.returnValue = ''; // Chrome 필수
-        return '';
-      }
-    });
-  }
+  // setupBackNavigation은 navigation.js의 enableUnsavedChangesWarning() 사용
 
   function validateForm() {
     let isValid = true;
@@ -451,14 +357,11 @@
     return isValid;
   }
 
+  // validateImage는 validation.js의 getImageFileError() 사용
   function validateImage(file) {
-    if (file.size > CONFIG.MAX_FILE_SIZE) {
-      elements.imageError.textContent = '이미지 파일 크기는 5MB 이하여야 합니다.';
-      // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
-      return false;
-    }
-    if (!CONFIG.ALLOWED_FILE_TYPES.includes(file.type)) {
-      elements.imageError.textContent = 'JPG, PNG, GIF 파일만 업로드 가능합니다.';
+    const error = getImageFileError(file);
+    if (error) {
+      elements.imageError.textContent = error;
       // CSS의 :not(:empty) 선택자가 자동으로 visibility 제어
       return false;
     }
