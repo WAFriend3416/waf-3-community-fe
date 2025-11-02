@@ -108,8 +108,8 @@
       renderSkeletonCards();
     }
 
-    // 프로필 이미지 로드
-    await loadUserProfile();
+    // 프로필 이미지 로드 (공통 모듈 사용)
+    await initAuthHeader();
 
     // 첫 페이지 게시글 로드
     await loadPosts();
@@ -163,23 +163,7 @@
     }
   }
 
-  function handleProfileMenuClick(e) {
-    const logoutTarget = e.target.closest('[data-action="logout"]');
-    if (logoutTarget) {
-      e.preventDefault();
-      handleLogout();
-      return;
-    }
-
-    const profileLink = e.target.closest('[data-action="profile-link"], a.profile-menu__item');
-    if (profileLink && profileLink.tagName === 'A') {
-      e.preventDefault();
-      const href = profileLink.getAttribute('href');
-      if (href) {
-        window.location.href = href;  // Changed from replace() to preserve history
-      }
-    }
-  }
+  // handleProfileMenuClick은 auth-header.js 공통 모듈 사용
 
   // ============================================
   // API Functions
@@ -398,89 +382,11 @@
   // ============================================
   // User Profile
   // ============================================
-  async function loadUserProfile() {
-    const profileMenu = document.querySelector('[data-auth="authenticated"]');
-    const guestAuth = document.querySelector('[data-auth="guest"]');
-
-    if (!isAuthenticated()) {
-      // 비로그인: 로그인/회원가입 버튼 표시
-      if (profileMenu) profileMenu.style.display = 'none';
-      if (guestAuth) guestAuth.style.display = 'flex';
-
-      // 기본 이미지 (필요 시)
-      if (elements.profileImage) {
-        elements.profileImage.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=anonymous';
-      }
-      return;
-    }
-
-    // 로그인: 프로필 메뉴 표시
-    if (profileMenu) profileMenu.style.display = 'flex';
-    if (guestAuth) guestAuth.style.display = 'none';
-
-    try {
-      const userId = getCurrentUserId();
-
-      // userId 검증 (null, undefined 체크)
-      if (!userId) {
-        console.warn('Invalid userId, skipping profile load');
-        return;
-      }
-
-      const user = await fetchWithAuth(`/users/${userId}`);
-
-      // 프로필 이미지 설정
-      if (elements.profileImage && user.profileImage) {
-        elements.profileImage.src = user.profileImage;
-      }
-
-      // 프로필 닉네임 설정
-      const profileNickname = document.querySelector('[data-profile="nickname"]');
-      if (profileNickname && user.nickname) {
-        profileNickname.textContent = user.nickname;
-      }
-    } catch (error) {
-      console.error('Failed to load user profile:', error);
-    }
-  }
-
+  // loadUserProfile, handleLogout, debounce는 공통 모듈 사용
+  // - initAuthHeader() (auth-header.js)
+  // - performLogout() (auth-header.js)
+  // - debounce() (utils.js)
   // ============================================
-  // Profile Menu Handlers
-  // ============================================
-
-  /**
-   * 로그아웃 핸들러
-   */
-  async function handleLogout() {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      window.location.replace(CONFIG.LOGIN_URL);
-    }
-  }
-
-  // ============================================
-  // Utility Functions
-  // ============================================
-  /**
-   * Debounce 패턴 (성능 최적화)
-   * @param {Function} func - 실행할 함수
-   * @param {Number} wait - 대기 시간 (ms)
-   * @returns {Function} - Debounced 함수
-   */
-  function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }
 
   // ============================================
   // Floating Buttons

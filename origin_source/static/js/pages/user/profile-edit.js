@@ -56,7 +56,7 @@
       cacheElements();
       cleanupInlineStyles();  // 인라인 스타일 정리
       bindEvents();
-      setupBackNavigation();  // 브라우저 뒤로가기 처리
+      enableUnsavedChangesWarning(() => state.hasChanges);  // 브라우저 뒤로가기 처리
       loadUserData();
     } catch (error) {
       console.error('Initialization failed:', error);
@@ -259,6 +259,7 @@
       }
 
       if (response.status === 204) {
+        disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
         Toast.success('프로필이 수정되었습니다.', '수정 완료', 3000, () => {
           window.location.reload();
         });
@@ -268,6 +269,7 @@
       const data = await response.json();
 
       if (response.ok) {
+        disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
         Toast.success('프로필이 수정되었습니다.', '수정 완료', 3000, () => {
           window.location.reload();
         });
@@ -363,50 +365,7 @@
     window.location.href = CONFIG.LIST_URL;
   }
 
-  /**
-   * 브라우저 뒤로가기 처리
-   *
-   * 원리:
-   * 1. 페이지 진입 시 sessionStorage에 출처 페이지 저장 (목록/기타)
-   * 2. beforeunload 이벤트로 페이지 떠남 감지
-   * 3. 변경사항 있으면 브라우저 기본 경고 표시
-   * 4. 변경사항 없으면 sessionStorage에 플래그 저장
-   * 5. 로그인 페이지가 플래그 확인 후 목록으로 리디렉트
-   */
-  function setupBackNavigation() {
-    // 1. 게시글 작성/수정 페이지에서 왔다면 히스토리 교체
-    const referrer = document.referrer;
-    if (referrer.includes('/pages/board/write.html') || referrer.includes('/pages/board/edit.html')) {
-      // 브라우저 히스토리의 현재 항목을 목록 페이지로 교체
-      history.replaceState(null, '', window.location.href);
-      history.pushState({ from: 'profile' }, '', window.location.href);
-      // 뒤로가기 시 목록으로 이동하도록 설정
-      window.addEventListener('popstate', () => {
-        window.location.href = CONFIG.LIST_URL;
-      });
-    }
-
-    // 2. 현재 페이지 진입 표시
-    sessionStorage.setItem('currentPage', 'profile-edit');
-
-    // 3. beforeunload: 페이지 떠날 때
-    window.addEventListener('beforeunload', (event) => {
-      // 변경사항 있으면 브라우저 기본 경고
-      if (state.hasChanges) {
-        event.preventDefault();
-        event.returnValue = ''; // Chrome 필수
-        return '';
-      }
-    });
-
-    // 4. pageshow: 뒤로가기로 돌아왔을 때 (브라우저 캐시에서 로드)
-    window.addEventListener('pageshow', (event) => {
-      if (event.persisted) {
-        // BFCache에서 복원됨 (뒤로가기)
-        sessionStorage.removeItem('redirectToList');
-      }
-    });
-  }
+  // setupBackNavigation은 navigation.js의 enableUnsavedChangesWarning() 사용
 
   async function handleWithdraw() {
     const confirmed1 = await confirmModal(

@@ -16,10 +16,10 @@
     /**
      * 초기화
      */
-    function init() {
+    async function init() {
         cacheElements();
         bindEvents();
-        updateHeaderAuth();
+        await updateHeaderAuth();
         loadStats();
     }
 
@@ -44,95 +44,17 @@
 
     /**
      * 헤더 인증 상태 업데이트
-     * localStorage의 access_token 확인하여 버튼 표시
+     * initAuthHeader()로 대체 (auth-header.js 공통 모듈)
      */
     async function updateHeaderAuth() {
-        const guestAuth = document.querySelector('[data-auth="guest"]');
-        const authenticatedAuth = document.querySelector('[data-auth="authenticated"]');
-
-        if (!guestAuth || !authenticatedAuth) return;
-
-        // isAuthenticated() from api.js
-        if (isAuthenticated()) {
-            // 로그인 상태
-            guestAuth.style.display = 'none';
-            authenticatedAuth.style.display = 'flex';
-
-            // 프로필 정보 로드
-            await loadUserProfile();
-        } else {
-            // 비로그인 상태
-            guestAuth.style.display = 'flex';
-            authenticatedAuth.style.display = 'none';
-        }
+        await initAuthHeader();
     }
 
-    /**
-     * 사용자 프로필 정보 로드
-     */
-    async function loadUserProfile() {
-        try {
-            const userId = getCurrentUserId();
-            if (!userId) {
-                console.warn('[Home] No userId found, skipping profile load');
-                return;
-            }
+    // loadUserProfile은 auth-header.js의 initAuthHeader() 사용
 
-            // fetchWithAuth는 이미 data.data를 반환함
-            const user = await fetchWithAuth(`/users/${userId}`);
+    // handleProfileMenuClick은 auth-header.js 공통 모듈 사용
 
-            // 프로필 이미지 설정
-            if (elements.profileImage && user.profileImage) {
-                elements.profileImage.src = user.profileImage;
-            }
-
-            // 프로필 닉네임 설정
-            if (elements.profileNickname && user.nickname) {
-                elements.profileNickname.textContent = user.nickname;
-            }
-        } catch (error) {
-            console.error('[Home] Failed to load user profile:', error);
-        }
-    }
-
-    /**
-     * 프로필 메뉴 클릭 핸들러
-     */
-    function handleProfileMenuClick(e) {
-        // 로그아웃 버튼 클릭
-        const logoutTarget = e.target.closest('[data-action="logout"]');
-        if (logoutTarget) {
-            e.preventDefault();
-            handleLogout();
-            return;
-        }
-
-        // 프로필 링크 클릭
-        const profileLink = e.target.closest('[data-action="profile-link"]');
-        if (profileLink) {
-            e.preventDefault();
-            const href = profileLink.getAttribute('href');
-            if (href) {
-                window.location.href = href;
-            }
-        }
-    }
-
-    /**
-     * 로그아웃 처리
-     */
-    async function handleLogout() {
-        try {
-            await fetchWithAuth('/auth/logout', { method: 'POST' });
-            removeAccessToken();
-            window.location.href = '/pages/user/login.html';
-        } catch (error) {
-            console.error('Logout failed:', error);
-            // 로그아웃 실패해도 로그인 페이지로 이동
-            removeAccessToken();
-            window.location.href = '/pages/user/login.html';
-        }
-    }
+    // handleLogout은 auth-header.js의 performLogout() 사용
 
     /**
      * 통계 데이터 로드

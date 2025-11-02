@@ -26,8 +26,7 @@
     uploadedImageId: null,
     uploadedImageUrl: null,
     selectedFile: null,
-    isSubmitting: false,
-    skipBeforeunload: false  // 모달 확인 후 beforeunload 건너뛰기
+    isSubmitting: false
   };
 
   // ============================================
@@ -55,12 +54,16 @@
   // ============================================
   // Initialization
   // ============================================
-  function init() {
+  async function init() {
     cacheElements();
     cleanupInlineStyles();  // 인라인 스타일 정리
     bindEvents();
-    loadUserProfile();  // 프로필 로드
-    setupBackNavigation();  // 브라우저 뒤로가기 처리
+    await initAuthHeader();  // 프로필 로드 (auth-header.js 공통 모듈)
+    enableUnsavedChangesWarning(() => {
+      const hasContent = (elements.titleInput?.value.trim() || '') !== '' ||
+                        (elements.contentTextarea?.value.trim() || '') !== '';
+      return hasContent;
+    });  // 브라우저 뒤로가기 처리 (navigation.js 공통 모듈)
   }
 
   function cacheElements() {
@@ -137,67 +140,12 @@
   // ============================================
   // Profile Load
   // ============================================
-  async function loadUserProfile() {
-    const profileMenu = document.querySelector('[data-auth="authenticated"]');
-
-    if (!isAuthenticated()) {
-      // 비로그인: 프로필 메뉴 숨김
-      if (profileMenu) profileMenu.style.display = 'none';
-      return;
-    }
-
-    // 로그인: 프로필 메뉴 표시
-    if (profileMenu) profileMenu.style.display = 'flex';
-
-    try {
-      const userId = getCurrentUserId();
-
-      // userId 검증
-      if (!userId) {
-        console.warn('Invalid userId, skipping profile load');
-        return;
-      }
-
-      const user = await fetchWithAuth(`/users/${userId}`);
-
-      if (user) {
-        // 프로필 이미지 업데이트
-        const profileImage = document.querySelector('[data-profile="image"]');
-        const profileName = document.querySelector('[data-profile="nickname"]');
-
-        if (profileImage && user.profileImage) {
-          profileImage.src = user.profileImage;
-        }
-
-        if (profileName && user.nickname) {
-          profileName.textContent = user.nickname;
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load user profile:', error);
-    }
-  }
+  // loadUserProfile은 auth-header.js의 initAuthHeader() 사용
 
   // ============================================
   // Event Handlers
   // ============================================
-  function handleProfileMenuClick(e) {
-    const logoutTarget = e.target.closest('[data-action="logout"]');
-    if (logoutTarget) {
-      e.preventDefault();
-      handleLogout();
-      return;
-    }
-
-    const profileLink = e.target.closest('[data-action="profile-link"], a.profile-menu__item');
-    if (profileLink && profileLink.tagName === 'A') {
-      e.preventDefault();
-      const href = profileLink.getAttribute('href');
-      if (href) {
-        window.location.href = href;
-      }
-    }
-  }
+  // handleProfileMenuClick은 auth-header.js 공통 모듈 사용
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -243,7 +191,7 @@
       });
 
       // 성공 - 토스트 메시지 후 상세 페이지로 이동
-      state.skipBeforeunload = true;  // beforeunload 경고 건너뛰기
+      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
       Toast.success('게시글이 작성되었습니다.', '작성 완료', 2000, () => {
         window.location.replace(`${CONFIG.DETAIL_URL}?id=${post.postId}`);
       });
@@ -283,7 +231,7 @@
       '저장하지 않은 내용이 사라집니다. 나가시겠습니까?'
     );
     if (confirmed) {
-      state.skipBeforeunload = true;  // beforeunload 건너뛰기
+      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
       window.location.replace(CONFIG.LIST_URL);  // replace()로 history 중복 방지
     }
   }
@@ -295,36 +243,12 @@
       '저장하지 않은 내용이 사라집니다. 취소하시겠습니까?'
     );
     if (confirmed) {
-      state.skipBeforeunload = true;  // beforeunload 건너뛰기
+      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
       window.location.replace(CONFIG.LIST_URL);  // replace()로 history 중복 방지
     }
   }
 
-  /**
-   * 브라우저 뒤로가기 처리
-   *
-   * 원리:
-   * 1. beforeunload 이벤트로 페이지 떠남 감지
-   * 2. 모달 확인 후에는 경고 건너뛰기 (state.skipBeforeunload)
-   * 3. 브라우저 기본 경고 표시 (작성 중인 내용 보호)
-   */
-  function setupBackNavigation() {
-    // beforeunload: 페이지 떠날 때
-    window.addEventListener('beforeunload', (event) => {
-      // 모달 확인 후에는 경고 안 함
-      if (state.skipBeforeunload) return;
-
-      // 제목이나 내용이 있으면 경고
-      const hasContent = (elements.titleInput?.value.trim() || '') !== '' ||
-                        (elements.contentTextarea?.value.trim() || '') !== '';
-
-      if (hasContent) {
-        event.preventDefault();
-        event.returnValue = ''; // Chrome 필수
-        return '';
-      }
-    });
-  }
+  // setupBackNavigation은 navigation.js의 enableUnsavedChangesWarning() 사용
 
   function handleTitleBlur() {
     if (!elements.titleInput) return;
@@ -361,33 +285,7 @@
     });
   }
 
-  function handleProfileMenuClick(e) {
-    const logoutTarget = e.target.closest('[data-action="logout"]');
-    if (logoutTarget) {
-      e.preventDefault();
-      handleLogout();
-      return;
-    }
-
-    const profileLink = e.target.closest('[data-action="profile-link"]');
-    if (profileLink) {
-      e.preventDefault();
-      const href = profileLink.getAttribute('href');
-      if (href) {
-        window.location.href = href;  // Changed from replace() to preserve history
-      }
-    }
-  }
-
-  async function handleLogout() {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Logout failed:', error);
-    } finally {
-      window.location.replace(CONFIG.LOGIN_URL);
-    }
-  }
+  // handleLogout은 auth-header.js의 performLogout() 사용
 
   // ============================================
   // Validation Functions
@@ -437,19 +335,13 @@
     return true;
   }
 
+  // validateImage는 validation.js의 getImageFileError() 사용
   function validateImage(file) {
-    // 파일 크기 검증 (5MB)
-    if (file.size > CONFIG.MAX_FILE_SIZE) {
-      showImageError('이미지 파일 크기는 5MB 이하여야 합니다.');
+    const error = getImageFileError(file);
+    if (error) {
+      showImageError(error);
       return false;
     }
-
-    // 파일 형식 검증 (JPG, PNG, GIF)
-    if (!CONFIG.ALLOWED_FILE_TYPES.includes(file.type)) {
-      showImageError('JPG, PNG, GIF 파일만 업로드 가능합니다.');
-      return false;
-    }
-
     return true;
   }
 
