@@ -29,15 +29,9 @@ async function initAuthHeader() {
     if (!userId) return;
 
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/users/${userId}`);
-        const result = await response.json();
+        // fetchWithAuth는 이미 JSON 파싱된 data 필드를 반환
+        const user = await fetchWithAuth(`/users/${userId}`);
 
-        if (!response.ok) {
-            console.error('Failed to load user profile:', result.message);
-            return;
-        }
-
-        const user = result.data;
         const profileImage = document.querySelector('[data-profile="image"]');
         const profileNickname = document.querySelector('[data-profile="nickname"]');
 
