@@ -46,13 +46,13 @@
       <div class="header__auth">
         <!-- 비로그인 상태 -->
         <div data-auth="guest" style="display: none;">
-          <a href="/pages/user/login.html" class="btn btn--secondary">로그인</a>
-          <a href="/pages/user/register.html" class="btn btn--primary">회원가입</a>
+          <a href="/page/login" class="btn btn--secondary">로그인</a>
+          <a href="/page/register" class="btn btn--primary">회원가입</a>
         </div>
 
         <!-- 로그인 상태 -->
         <div data-auth="authenticated" style="display: none; align-items: center; gap: 12px;">
-          <a href="/pages/board/list.html" class="btn btn--secondary">커뮤니티</a>
+          <a href="/board" class="btn btn--secondary">커뮤니티</a>
 
           <!-- 프로필 메뉴 -->
           <div class="profile-menu">
@@ -61,13 +61,13 @@
               <span class="header__profile-name" data-profile="nickname">사용자</span>
             </button>
             <div class="profile-menu__dropdown" data-dropdown="profile">
-              <a href="/pages/user/profile-edit.html" class="profile-menu__item" data-action="profile-link">
+              <a href="/page/profile" class="profile-menu__item" data-action="profile-link">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
                 </svg>
                 프로필 수정
               </a>
-              <a href="/pages/user/password-change.html" class="profile-menu__item" data-action="profile-link">
+              <a href="/page/password" class="profile-menu__item" data-action="profile-link">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M18 8H17V6C17 3.24 14.76 1 12 1C9.24 1 7 3.24 7 6V8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM12 17C10.9 17 10 16.1 10 15C10 13.9 10.9 13 12 13C13.1 13 14 13.9 14 15C14 16.1 13.1 17 12 17ZM15.1 8H8.9V6C8.9 4.29 10.29 2.9 12 2.9C13.71 2.9 15.1 4.29 15.1 6V8Z" fill="currentColor"/>
                 </svg>
@@ -95,8 +95,8 @@
         <h1 class="hero__title">개발자들의<br><span class="hero__highlight">성장 플랫폼</span></h1>
         <p class="hero__subtitle">지식을 공유하고, 함께 성장하며, 더 나은 개발자가 되어가는 공간</p>
         <div class="hero__actions">
-          <a href="/pages/user/register.html" class="btn btn--primary btn--lg">무료로 시작하기 →</a>
-          <a href="/pages/board/list.html" class="btn btn--secondary btn--lg">커뮤니티 둘러보기</a>
+          <a href="/page/register" class="btn btn--primary btn--lg">무료로 시작하기 →</a>
+          <a href="/board" class="btn btn--secondary btn--lg">커뮤니티 둘러보기</a>
         </div>
         <div class="hero__stats">
           <div class="hero__stat">
@@ -184,9 +184,9 @@
           <h2 class="cta__title">오늘부터 함께 성장하세요</h2>
           <p class="cta__subtitle">가입은 무료이며, 1분이면 충분합니다</p>
           <div class="cta__actions">
-            <a href="/pages/user/register.html" class="btn btn--primary btn--lg">무료로 시작하기 →</a>
+            <a href="/page/register" class="btn btn--primary btn--lg">무료로 시작하기 →</a>
           </div>
-          <p class="cta__note">이미 계정이 있으신가요? <a href="/pages/user/login.html" class="cta__link">로그인하기</a></p>
+          <p class="cta__note">이미 계정이 있으신가요? <a href="/page/login" class="cta__link">로그인하기</a></p>
         </div>
       </div>
     </section>
