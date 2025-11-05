@@ -4,14 +4,8 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// origin_source/static 디렉토리만 정적 파일로 서빙 (디렉토리 리스팅 비활성화)
-app.use(express.static(path.join(__dirname, 'origin_source/static'), {
-  index: false,      // 디렉토리 리스팅 비활성화
-  dotfiles: 'ignore' // 숨김 파일 무시
-}));
-
 // ========================================
-// .html 직접 접근 → Clean URL 리다이렉트
+// .html 직접 접근 → Clean URL 리다이렉트 (정적 파일 서빙보다 먼저)
 // ========================================
 app.get('*.html', (req, res, next) => {
   const redirectMap = {
@@ -32,7 +26,7 @@ app.get('*.html', (req, res, next) => {
 });
 
 // ========================================
-// Clean URL Routing (간소화된 URL)
+// Clean URL Routing (간소화된 URL) - 정적 파일 서빙보다 먼저
 // ========================================
 
 // 홈 페이지
@@ -73,6 +67,14 @@ app.get('/board/:id', (req, res) => {
 app.get('/board/:id/edit', (req, res) => {
   res.sendFile(path.join(__dirname, 'origin_source/static/pages/board/edit.html'));
 });
+
+// ========================================
+// 정적 파일 서빙 (Clean URL 라우팅 후에 실행)
+// ========================================
+app.use(express.static(path.join(__dirname, 'origin_source/static'), {
+  index: false,      // 디렉토리 리스팅 비활성화
+  dotfiles: 'ignore' // 숨김 파일 무시
+}));
 
 // 404 처리
 app.use((req, res) => {
