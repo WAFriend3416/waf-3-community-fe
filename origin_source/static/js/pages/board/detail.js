@@ -709,8 +709,16 @@
 
     } catch (error) {
       console.error('Failed to delete post:', error);
-      const translatedMessage = translateErrorCode(error.message);
-      showError(translatedMessage || '게시글 삭제에 실패했습니다.');
+
+      // NETWORK-ERROR: 네트워크 연결 실패
+      if (error.message === 'NETWORK-ERROR') {
+        const translatedMessage = translateErrorCode(error.message);
+        showError(translatedMessage);
+      } else {
+        const translatedMessage = translateErrorCode(error.message);
+        showError(translatedMessage || '게시글 삭제에 실패했습니다.');
+      }
+
       closeDeleteModal();
     }
   }

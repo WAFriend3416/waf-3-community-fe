@@ -77,21 +77,31 @@
      * 통계 API 호출
      */
     async function fetchStats() {
-        const response = await fetch('http://localhost:8080/stats', {
-            credentials: 'include'
-        });
+        try {
+            const response = await fetch('http://localhost:8080/stats', {
+                credentials: 'include'
+            });
 
-        if (response.ok) {
-            const data = await response.json();
-            // 백엔드 응답 형식에 맞춰 변환
-            return {
-                posts: data.data.totalPosts,
-                members: data.data.totalUsers,
-                comments: data.data.totalComments
-            };
+            if (response.ok) {
+                const data = await response.json();
+                // 백엔드 응답 형식에 맞춰 변환
+                return {
+                    posts: data.data.totalPosts,
+                    members: data.data.totalUsers,
+                    comments: data.data.totalComments
+                };
+            }
+
+            throw new Error('Failed to fetch stats');
+        } catch (error) {
+            // Network Error 감지 (TypeError "Failed to fetch")
+            if (error instanceof TypeError && error.message === 'Failed to fetch') {
+                const networkError = new Error('NETWORK-ERROR');
+                networkError.originalError = error;
+                throw networkError;
+            }
+            throw error;
         }
-
-        throw new Error('Failed to fetch stats');
     }
 
     /**
