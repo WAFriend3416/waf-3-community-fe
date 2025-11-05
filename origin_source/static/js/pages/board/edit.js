@@ -166,9 +166,18 @@
       updateSubmitButtonState();
     } catch (error) {
       console.error('Failed to load post:', error);
-      Toast.error('게시글을 불러오는데 실패했습니다.', '오류', 2000, () => {
-        window.history.back();
-      });
+
+      // NETWORK-ERROR: 네트워크 연결 실패
+      if (error.message === 'NETWORK-ERROR') {
+        const translatedMessage = translateErrorCode(error.message);
+        Toast.error(translatedMessage, '네트워크 오류', 3000, () => {
+          window.history.back();
+        });
+      } else {
+        Toast.error('게시글을 불러오는데 실패했습니다.', '오류', 2000, () => {
+          window.history.back();
+        });
+      }
     }
   }
 
