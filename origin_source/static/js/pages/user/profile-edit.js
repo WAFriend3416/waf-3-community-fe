@@ -12,7 +12,7 @@
     MAX_NICKNAME_LENGTH: 10,
     MAX_FILE_SIZE: 5 * 1024 * 1024,
     ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
-    LIST_URL: '/pages/board/list.html'
+    LIST_URL: '/board'
   };
 
   const state = {
@@ -46,7 +46,7 @@
       if (!userId) {
         console.error('Failed to get userId');
         Toast.error('로그인이 필요합니다.', '인증 필요', 3000, () => {
-          window.location.href = '/pages/user/login.html';
+          window.location.href = '/page/login';
         });
         return;
       }
@@ -61,7 +61,7 @@
     } catch (error) {
       console.error('Initialization failed:', error);
       Toast.error('로그인이 필요합니다.', '인증 필요', 3000, () => {
-        window.location.href = '/pages/user/login.html';
+        window.location.href = '/page/login';
       });
     }
   }
@@ -220,7 +220,7 @@
       if (!accessToken) {
         Toast.error('인증 정보가 없습니다. 다시 로그인해주세요.', '인증 오류');
         setTimeout(() => {
-          window.location.href = '/pages/user/login.html';
+          window.location.href = '/page/login';
         }, 2000);
         return;
       }
@@ -252,7 +252,7 @@
           // 토큰 갱신 실패 - 로그인 페이지로
           Toast.error('인증이 만료되었습니다. 다시 로그인해주세요.', '인증 만료');
           setTimeout(() => {
-            window.location.href = '/pages/user/login.html';
+            window.location.href = '/page/login';
           }, 2000);
           return;
         }
@@ -397,7 +397,7 @@
 
       Toast.success('회원탈퇴가 완료되었습니다.', '탈퇴 완료', 3000, () => {
         logout();
-        window.location.href = '/pages/user/login.html';
+        window.location.href = '/page/login';
       });
     } catch (error) {
       console.error('Failed to withdraw:', error);

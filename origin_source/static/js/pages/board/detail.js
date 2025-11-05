@@ -11,9 +11,9 @@
   // Configuration
   // ============================================
   const CONFIG = {
-    EDIT_POST_URL: '/pages/board/edit.html',
-    LIST_URL: '/pages/board/list.html',
-    LOGIN_URL: '/pages/user/login.html'
+    EDIT_POST_URL: '/board',  // /board/:id/edit로 리다이렉트됨
+    LIST_URL: '/board',
+    LOGIN_URL: '/page/login'
   };
 
   // ============================================
@@ -69,11 +69,11 @@
   // Initialization
   // ============================================
   async function init() {
-    // URL에서 postId 추출
-    const urlParams = new URLSearchParams(window.location.search);
-    state.postId = urlParams.get('id');
+    // URL 경로에서 postId 추출 (/board/:id 형식)
+    const pathParts = window.location.pathname.split('/');
+    state.postId = pathParts[pathParts.length - 1];
 
-    if (!state.postId) {
+    if (!state.postId || isNaN(state.postId)) {
       Toast.error('게시글을 찾을 수 없습니다.', '오류', 2000, () => {
         window.location.replace(CONFIG.LIST_URL);
       });
@@ -322,7 +322,7 @@
 
   function handleEditPost(e) {
     e.preventDefault();
-    window.location.replace(`${CONFIG.EDIT_POST_URL}?id=${state.postId}`);  // replace()로 히스토리 중복 방지
+    window.location.replace(`${CONFIG.EDIT_POST_URL}/${state.postId}/edit`);  // replace()로 히스토리 중복 방지
   }
 
   function handleDeletePost(e) {

@@ -11,8 +11,8 @@
     MAX_TITLE_LENGTH: 27,
     MAX_FILE_SIZE: 5 * 1024 * 1024,
     ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
-    DETAIL_URL: '/pages/board/detail.html',
-    LOGIN_URL: '/pages/user/login.html'
+    DETAIL_URL: '/board',
+    LOGIN_URL: '/page/login'
   };
 
   const state = {
@@ -47,11 +47,12 @@
   };
 
   async function init() {
-    const urlParams = new URLSearchParams(window.location.search);
-    state.postId = urlParams.get('id');
+    // URL 경로에서 postId 추출 (/board/:id/edit 형식)
+    const pathParts = window.location.pathname.split('/');
+    state.postId = pathParts[pathParts.indexOf('board') + 1];
 
     // postId 검증 (빠른 새로고침 대비)
-    if (!state.postId) {
+    if (!state.postId || isNaN(state.postId)) {
       Toast.error('게시글을 찾을 수 없습니다.', '오류', 2000, () => {
         window.history.back();
       });
@@ -219,7 +220,7 @@
       // 성공 - 토스트 메시지 후 상세 페이지로 이동
       disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
       Toast.success('게시글이 수정되었습니다.', '수정 완료', 1200, () => {
-        window.location.replace(`${CONFIG.DETAIL_URL}?id=${state.postId}`);  // replace()로 history 중복 방지
+        window.location.replace(`${CONFIG.DETAIL_URL}/${state.postId}`);  // replace()로 history 중복 방지
       });
     } catch (error) {
       console.error('Failed to update post:', error);
@@ -283,7 +284,7 @@
       if (!confirmed) return;
       disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
     }
-    window.location.replace(`${CONFIG.DETAIL_URL}?id=${state.postId}`);  // replace()로 history 중복 방지
+    window.location.replace(`${CONFIG.DETAIL_URL}/${state.postId}`);  // replace()로 history 중복 방지
   }
 
   async function handleCancel(e) {
@@ -296,7 +297,7 @@
       if (!confirmed) return;
       disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
     }
-    window.location.replace(`${CONFIG.DETAIL_URL}?id=${state.postId}`);  // replace()로 history 중복 방지
+    window.location.replace(`${CONFIG.DETAIL_URL}/${state.postId}`);  // replace()로 history 중복 방지
   }
 
   function checkForChanges() {

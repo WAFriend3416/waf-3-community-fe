@@ -12,8 +12,8 @@
     // ============================================
     const CONFIG = {
         API_BASE_URL: 'http://localhost:8080',
-        LIST_URL: '/pages/board/list.html',
-        LOGIN_URL: '/pages/user/login.html'
+        LIST_URL: '/board',
+        LOGIN_URL: '/page/login'
     };
 
     // ============================================

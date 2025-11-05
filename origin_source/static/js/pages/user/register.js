@@ -12,7 +12,7 @@
     // ============================================
     const CONFIG = {
         LOGIN_URL: './login.html',
-        LIST_URL: '/pages/board/list.html',
+        LIST_URL: '/board',
         API_BASE_URL: 'http://localhost:8080',
         MAX_NICKNAME_LENGTH: 10,
         MAX_FILE_SIZE: 5 * 1024 * 1024,

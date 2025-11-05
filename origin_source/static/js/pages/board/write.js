@@ -14,9 +14,9 @@
     MAX_TITLE_LENGTH: 27,
     MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
     ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
-    LIST_URL: '/pages/board/list.html',
-    DETAIL_URL: '/pages/board/detail.html',
-    LOGIN_URL: '/pages/user/login.html'
+    LIST_URL: '/board',
+    DETAIL_URL: '/board',
+    LOGIN_URL: '/page/login'
   };
 
   // ============================================
@@ -193,7 +193,7 @@
       // 성공 - 토스트 메시지 후 상세 페이지로 이동
       disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
       Toast.success('게시글이 작성되었습니다.', '작성 완료', 2000, () => {
-        window.location.replace(`${CONFIG.DETAIL_URL}?id=${post.postId}`);
+        window.location.replace(`${CONFIG.DETAIL_URL}/${post.postId}`);
       });
 
     } catch (error) {

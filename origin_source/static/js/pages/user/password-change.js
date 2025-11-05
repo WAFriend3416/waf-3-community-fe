@@ -8,7 +8,7 @@
   'use strict';
 
   const CONFIG = {
-    LIST_URL: '/pages/board/list.html'
+    LIST_URL: '/board'
   };
 
   const state = {
@@ -40,7 +40,7 @@
       if (!userId) {
         console.error('Failed to get userId');
         Toast.warning('로그인이 필요합니다.', '인증 필요', 3000, () => {
-          window.location.href = '/pages/user/login.html';
+          window.location.href = '/page/login';
         });
         return;
       }
@@ -54,7 +54,7 @@
     } catch (error) {
       console.error('Initialization failed:', error);
       Toast.warning('로그인이 필요합니다.', '인증 필요', 3000, () => {
-        window.location.href = '/pages/user/login.html';
+        window.location.href = '/page/login';
       });
     }
   }
@@ -195,7 +195,7 @@
 
       Toast.success('비밀번호가 변경되었습니다. 다시 로그인해주세요.', '변경 완료', 3000, async () => {
         await logout();
-        window.location.href = '/pages/user/login.html';
+        window.location.href = '/page/login';
       });
     } catch (error) {
       console.error('Failed to change password:', error);

@@ -12,9 +12,9 @@
   // ============================================
   const CONFIG = {
     PAGE_SIZE: 20,
-    WRITE_POST_URL: '/pages/board/write.html',
-    POST_DETAIL_URL: '/pages/board/detail.html',
-    LOGIN_URL: '/pages/user/login.html'
+    WRITE_POST_URL: '/board/write',
+    POST_DETAIL_URL: '/board',
+    LOGIN_URL: '/page/login'
   };
 
   // ============================================
@@ -161,7 +161,7 @@
 
     const postId = card.dataset.postId;
     if (postId) {
-      window.location.href = `${CONFIG.POST_DETAIL_URL}?id=${postId}`;
+      window.location.href = `${CONFIG.POST_DETAIL_URL}/${postId}`;
     }
   }
 
