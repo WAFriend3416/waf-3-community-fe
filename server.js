@@ -11,6 +11,27 @@ app.use(express.static(path.join(__dirname, 'origin_source/static'), {
 }));
 
 // ========================================
+// .html 직접 접근 → Clean URL 리다이렉트
+// ========================================
+app.get('*.html', (req, res, next) => {
+  const redirectMap = {
+    '/pages/user/login.html': '/page/login',
+    '/pages/user/register.html': '/page/register',
+    '/pages/user/profile-edit.html': '/page/profile',
+    '/pages/user/password-change.html': '/page/password',
+    '/pages/board/list.html': '/board',
+    '/pages/board/write.html': '/board/write',
+    '/pages/home/index.html': '/',
+  };
+
+  if (redirectMap[req.path]) {
+    return res.redirect(301, redirectMap[req.path]);
+  }
+
+  next();
+});
+
+// ========================================
 // Clean URL Routing (간소화된 URL)
 // ========================================
 
