@@ -121,27 +121,19 @@
             state.isSubmitting = true;
             setLoading(true);
 
-            // API 호출 (서버가 HttpOnly Cookie 설정)
-            const response = await fetch(`${CONFIG.API_BASE_URL}/auth/login`, {
+            // API 호출 (fetchWithAuth 사용 → Network Error 감지됨)
+            const result = await fetchWithAuth('/auth/login', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
                 body: JSON.stringify({ email, password })
             });
 
-            const result = await response.json();
-
-            if (response.ok) {
-                // 응답 body의 accessToken을 localStorage에 저장
-                if (result.data && result.data.accessToken) {
-                    setAccessToken(result.data.accessToken);
-                }
-
-                // 게시글 목록으로 리다이렉트 (replace로 히스토리에서 로그인 페이지 제거)
-                window.location.replace(CONFIG.LIST_URL);
-            } else {
-                throw new Error(result.message);
+            // 응답 body의 accessToken을 localStorage에 저장
+            if (result && result.accessToken) {
+                setAccessToken(result.accessToken);
             }
+
+            // 게시글 목록으로 리다이렉트 (replace로 히스토리에서 로그인 페이지 제거)
+            window.location.replace(CONFIG.LIST_URL);
 
         } catch (error) {
             handleLoginError(error);
