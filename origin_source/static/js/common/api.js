@@ -153,6 +153,14 @@ async function fetchWithAuth(url, options = {}) {
         return handleResponse(response);
     } catch (error) {
         console.error('API Error:', error);
+
+        // Network Error 감지 (백엔드 서버 다운 또는 네트워크 불가)
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+            const networkError = new Error('NETWORK-ERROR');
+            networkError.originalError = error;
+            throw networkError;
+        }
+
         throw error;
     }
 }
@@ -323,6 +331,9 @@ async function uploadImage(file) {
  */
 function translateErrorCode(code) {
     const errorMessages = {
+        // Network Error
+        'NETWORK-ERROR': '서버에 연결할 수 없습니다. 네트워크 연결을 확인하거나 잠시 후 다시 시도해주세요.',
+
         // AUTH 에러
         'AUTH-001': '이메일 또는 비밀번호가 일치하지 않습니다.',
         'AUTH-002': '유효하지 않은 토큰입니다.',

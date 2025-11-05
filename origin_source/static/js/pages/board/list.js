@@ -23,7 +23,9 @@
   const state = {
     currentCursor: null, // Cursor 페이지네이션
     hasMore: true,
-    isLoading: false
+    isLoading: false,
+    retryCount: 0,       // 재시도 카운터
+    maxRetries: 5        // 최대 5회 재시도
   };
 
   // ============================================
@@ -192,12 +194,29 @@
 
       // 응답 구조: { posts: [...], nextCursor: 100, hasMore: true }
       handlePostsLoaded(result);
+      state.retryCount = 0;  // 성공 시 카운터 리셋
 
     } catch (error) {
       console.error('Failed to load posts:', error);
-      showError('게시글을 불러오는데 실패했습니다.');
+
+      state.retryCount++;
+
+      if (state.retryCount >= state.maxRetries) {
+        // 5회 재시도 후 버튼 표시
+        showError(`게시글을 불러올 수 없습니다. (${state.retryCount}/${state.maxRetries})`);
+        showRetryButton();
+      } else {
+        // 재시도 가능 - 2초 후 자동 재시도
+        showError(`게시글을 불러오는데 실패했습니다. (시도 ${state.retryCount}/${state.maxRetries})`);
+        setTimeout(() => {
+          loadPosts();
+        }, 2000);
+      }
+
     } finally {
       setLoading(false);
+      // 항상 스켈레톤 제거 (성공/실패 모두)
+      removeSkeletonCards();
     }
   }
 
@@ -350,6 +369,21 @@
 
     const skeletons = elements.postList.querySelectorAll('[data-skeleton="true"]');
     skeletons.forEach(skeleton => skeleton.remove());
+  }
+
+  function showRetryButton() {
+    const retryContainer = document.getElementById('retry-container');
+    const retryButton = document.getElementById('retry-button');
+
+    if (retryContainer) retryContainer.style.display = 'block';
+    if (retryButton) {
+      retryButton.onclick = () => {
+        state.retryCount = 0;  // 카운터 리셋
+        state.hasMore = true;  // 상태 복구
+        if (retryContainer) retryContainer.style.display = 'none';
+        loadPosts();
+      };
+    }
   }
 
   function setLoading(loading) {

@@ -109,6 +109,12 @@
         <!-- Posts will be dynamically loaded here by list.js -->
       </section>
 
+      <!-- Retry Button (Network Error) -->
+      <div id="retry-container" style="display: none; text-align: center; padding: 40px;">
+        <p style="color: #666; margin-bottom: 20px;">게시글을 불러올 수 없습니다.</p>
+        <button id="retry-button" class="btn btn--primary">다시 시도</button>
+      </div>
+
       <!-- Loading Indicator (Infinite Scroll) -->
       <div class="loading-indicator" data-loading="posts" style="display: none;" role="status" aria-live="polite">
         <div class="loading-indicator__spinner"></div>

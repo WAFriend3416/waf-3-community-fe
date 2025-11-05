@@ -212,6 +212,12 @@
         // ErrorCode 번역 (translateErrorCode는 api.js에 있음)
         const translatedMessage = translateErrorCode(message);
 
+        // NETWORK-ERROR: 네트워크 연결 실패 (필드 에러 아님)
+        if (message === 'NETWORK-ERROR') {
+            Toast.error(translatedMessage, '네트워크 오류', 3000);
+            return;
+        }
+
         // AUTH-001: 이메일 또는 비밀번호 불일치
         if (message.includes('AUTH-001')) {
             showError('password', translatedMessage);

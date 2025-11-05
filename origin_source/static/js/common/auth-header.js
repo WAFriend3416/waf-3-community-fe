@@ -43,6 +43,11 @@ async function initAuthHeader() {
         }
     } catch (error) {
         console.error('Failed to load user profile:', error);
+
+        // Network Error인 경우 사용자에게 알림
+        if (error.message === 'NETWORK-ERROR') {
+            Toast.warning('프로필 정보를 불러올 수 없습니다.', '네트워크 오류', 3000);
+        }
     }
 }
 
