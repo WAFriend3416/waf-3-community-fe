@@ -177,9 +177,9 @@
   async function loadPosts() {
     if (state.isLoading || !state.hasMore) return;
 
-    try {
-      setLoading(true);
+    setLoading(true);
 
+    try {
       // API 호출 (cursor 방식)
       const params = new URLSearchParams({
         limit: CONFIG.PAGE_SIZE,
@@ -195,28 +195,30 @@
       // 응답 구조: { posts: [...], nextCursor: 100, hasMore: true }
       handlePostsLoaded(result);
       state.retryCount = 0;  // 성공 시 카운터 리셋
+      setLoading(false);
+      removeSkeletonCards();
 
     } catch (error) {
       console.error('Failed to load posts:', error);
 
       state.retryCount++;
+      removeSkeletonCards();
 
       if (state.retryCount >= state.maxRetries) {
         // 5회 재시도 후 버튼 표시
+        setLoading(false);
         showError(`게시글을 불러올 수 없습니다. (${state.retryCount}/${state.maxRetries})`);
         showRetryButton();
       } else {
         // 재시도 가능 - 2초 후 자동 재시도
+        // isLoading = true를 유지하여 재시도 중 중복 요청 방지
         showError(`게시글을 불러오는데 실패했습니다. (시도 ${state.retryCount}/${state.maxRetries})`);
+
         setTimeout(() => {
+          // 재시도: isLoading이 여전히 true이므로 중복 요청 방지됨
           loadPosts();
         }, 2000);
       }
-
-    } finally {
-      setLoading(false);
-      // 항상 스켈레톤 제거 (성공/실패 모두)
-      removeSkeletonCards();
     }
   }
 
