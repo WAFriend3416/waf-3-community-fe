@@ -75,10 +75,11 @@
 
     /**
      * 통계 API 호출
+     * API_BASE_URL은 api.js에서 환경별 동적 설정됨
      */
     async function fetchStats() {
         try {
-            const response = await fetch('http://localhost:8080/stats', {
+            const response = await fetch(`${API_BASE_URL}/stats`, {
                 credentials: 'include'
             });
 

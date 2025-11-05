@@ -5,10 +5,11 @@
  * 참조: @docs/fe/FRONTEND_GUIDE.md Section 2
  */
 
-// API Base URL
-// 추후 서버 분리시, 환경 변수 처리 필수
-const API_BASE_URL = 'http://localhost:8080';
-const LOGIN_URL = '/pages/user/login.html';
+// API Base URL (server.js에서 환경변수로 주입됨)
+// - 로컬 개발: window.API_BASE_URL = 'http://localhost:8080'
+// - EC2 배포: window.API_BASE_URL = 'http://{EC2_PRIVATE_IP}:8080'
+const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8080';
+const LOGIN_URL = '/page/login';
 
 // ========================================
 // localStorage Access Token 관리
