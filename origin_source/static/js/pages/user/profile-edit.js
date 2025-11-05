@@ -8,12 +8,14 @@
   'use strict';
 
   const CONFIG = {
-    API_BASE_URL: 'http://localhost:8080',
     MAX_NICKNAME_LENGTH: 10,
     MAX_FILE_SIZE: 5 * 1024 * 1024,
     ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
     LIST_URL: '/board'
   };
+
+  // API_BASE_URL은 server.js에서 window.API_BASE_URL로 주입됨
+  const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8080';
 
   const state = {
     userId: null,
@@ -236,7 +238,7 @@
       // API 호출 (multipart/form-data이므로 fetch 직접 사용)
       let response;
       try {
-        response = await fetch(`${CONFIG.API_BASE_URL}/users/${state.userId}`, {
+        response = await fetch(`${API_BASE_URL}/users/${state.userId}`, {
           method: 'PATCH',
           headers: headers,
           credentials: 'include',  // HttpOnly Cookie 자동 전송

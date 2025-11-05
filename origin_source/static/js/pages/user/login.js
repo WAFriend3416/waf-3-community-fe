@@ -11,10 +11,12 @@
     // Configuration
     // ============================================
     const CONFIG = {
-        API_BASE_URL: 'http://localhost:8080',
         LIST_URL: '/board',
         LOGIN_URL: '/page/login'
     };
+
+    // API_BASE_URL은 server.js에서 window.API_BASE_URL로 주입됨
+    const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8080';
 
     // ============================================
     // State Management
