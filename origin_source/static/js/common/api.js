@@ -308,12 +308,23 @@ async function uploadImage(file) {
         headers['X-XSRF-TOKEN'] = csrfToken;
     }
 
-    const response = await fetch(`${API_BASE_URL}/images`, {
-        method: 'POST',
-        credentials: 'include',  // Cookie 자동 전송
-        headers: headers,  // Authorization + CSRF 토큰 추가
-        body: formData  // Content-Type 자동 설정 (multipart/form-data)
-    });
+    let response;
+    try {
+        response = await fetch(`${API_BASE_URL}/images`, {
+            method: 'POST',
+            credentials: 'include',  // Cookie 자동 전송
+            headers: headers,  // Authorization + CSRF 토큰 추가
+            body: formData  // Content-Type 자동 설정 (multipart/form-data)
+        });
+    } catch (error) {
+        // Network Error 감지 (TypeError "Failed to fetch")
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+            const networkError = new Error('NETWORK-ERROR');
+            networkError.originalError = error;
+            throw networkError;
+        }
+        throw error;
+    }
 
     const data = await response.json();
     if (response.ok) return data.data; // { image_id, image_url }

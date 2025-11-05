@@ -180,11 +180,22 @@
             setLoading(true);
 
             // API 호출 (multipart/form-data이므로 fetch 직접 사용)
-            const response = await fetch(`${CONFIG.API_BASE_URL}/users/signup`, {
-                method: 'POST',
-                credentials: 'include',  // HttpOnly Cookie 수신
-                body: formData // Content-Type 자동 설정
-            });
+            let response;
+            try {
+                response = await fetch(`${CONFIG.API_BASE_URL}/users/signup`, {
+                    method: 'POST',
+                    credentials: 'include',  // HttpOnly Cookie 수신
+                    body: formData // Content-Type 자동 설정
+                });
+            } catch (error) {
+                // Network Error 감지 (TypeError "Failed to fetch")
+                if (error instanceof TypeError && error.message === 'Failed to fetch') {
+                    const networkError = new Error('NETWORK-ERROR');
+                    networkError.originalError = error;
+                    throw networkError;
+                }
+                throw error;
+            }
 
             const data = await response.json();
 
@@ -306,6 +317,12 @@
     function handleRegisterError(error) {
         const message = error.message || '';
         const translatedMessage = translateErrorCode(message);
+
+        // NETWORK-ERROR: 네트워크 연결 실패 (필드 에러 아님)
+        if (message === 'NETWORK-ERROR') {
+            Toast.error(translatedMessage, '네트워크 오류', 3000);
+            return;
+        }
 
         // USER-002: 이메일 중복
         if (message.includes('USER-002')) {

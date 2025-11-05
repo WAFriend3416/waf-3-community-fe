@@ -234,12 +234,23 @@
       }
 
       // API 호출 (multipart/form-data이므로 fetch 직접 사용)
-      const response = await fetch(`${CONFIG.API_BASE_URL}/users/${state.userId}`, {
-        method: 'PATCH',
-        headers: headers,
-        credentials: 'include',  // HttpOnly Cookie 자동 전송
-        body: formData  // Content-Type 자동 설정 (multipart/form-data)
-      });
+      let response;
+      try {
+        response = await fetch(`${CONFIG.API_BASE_URL}/users/${state.userId}`, {
+          method: 'PATCH',
+          headers: headers,
+          credentials: 'include',  // HttpOnly Cookie 자동 전송
+          body: formData  // Content-Type 자동 설정 (multipart/form-data)
+        });
+      } catch (error) {
+        // Network Error 감지 (TypeError "Failed to fetch")
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+          const networkError = new Error('NETWORK-ERROR');
+          networkError.originalError = error;
+          throw networkError;
+        }
+        throw error;
+      }
 
       // 401 Unauthorized - 토큰 갱신 후 재시도
       if (response.status === 401) {
@@ -278,8 +289,16 @@
       }
     } catch (error) {
       console.error('[Profile Edit] Failed to update profile:', error);
-      const errorMessage = translateErrorCode(error.message) || '프로필 수정에 실패했습니다.';
-      Toast.error(errorMessage, '오류');
+
+      // NETWORK-ERROR: 네트워크 연결 실패
+      if (error.message === 'NETWORK-ERROR') {
+        const translatedMessage = translateErrorCode(error.message);
+        Toast.error(translatedMessage, '네트워크 오류', 3000);
+      } else {
+        const errorMessage = translateErrorCode(error.message) || '프로필 수정에 실패했습니다.';
+        Toast.error(errorMessage, '오류');
+      }
+
       state.isSubmitting = false;
       elements.saveButton.disabled = false;
       elements.saveButton.textContent = '저장';
@@ -401,8 +420,15 @@
       });
     } catch (error) {
       console.error('Failed to withdraw:', error);
-      const translatedMessage = translateErrorCode(error.message);
-      Toast.error(translatedMessage || '회원탈퇴에 실패했습니다.', '오류');
+
+      // NETWORK-ERROR: 네트워크 연결 실패
+      if (error.message === 'NETWORK-ERROR') {
+        const translatedMessage = translateErrorCode(error.message);
+        Toast.error(translatedMessage, '네트워크 오류', 3000);
+      } else {
+        const translatedMessage = translateErrorCode(error.message);
+        Toast.error(translatedMessage || '회원탈퇴에 실패했습니다.', '오류');
+      }
     }
   }
 

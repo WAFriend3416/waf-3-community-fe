@@ -200,14 +200,20 @@
     } catch (error) {
       console.error('Failed to change password:', error);
 
-      // 에러 코드별 처리
-      const errorMessage = error.message;
-      if (errorMessage.includes('USER-006')) {
-        showCurrentPasswordError('현재 비밀번호가 일치하지 않습니다.');
-      } else if (errorMessage.includes('USER-004')) {
-        showNewPasswordError('비밀번호 정책을 만족하지 않습니다.');
+      // NETWORK-ERROR: 네트워크 연결 실패
+      if (error.message === 'NETWORK-ERROR') {
+        const translatedMessage = translateErrorCode(error.message);
+        Toast.error(translatedMessage, '네트워크 오류', 3000);
       } else {
-        Toast.error(translateErrorCode(errorMessage) || '비밀번호 변경에 실패했습니다.', '변경 실패');
+        // 에러 코드별 처리
+        const errorMessage = error.message;
+        if (errorMessage.includes('USER-006')) {
+          showCurrentPasswordError('현재 비밀번호가 일치하지 않습니다.');
+        } else if (errorMessage.includes('USER-004')) {
+          showNewPasswordError('비밀번호 정책을 만족하지 않습니다.');
+        } else {
+          Toast.error(translateErrorCode(errorMessage) || '비밀번호 변경에 실패했습니다.', '변경 실패');
+        }
       }
 
       state.isSubmitting = false;

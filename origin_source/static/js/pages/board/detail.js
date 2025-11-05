@@ -265,6 +265,20 @@
     } catch (error) {
       console.error('Failed to toggle like:', error);
 
+      // NETWORK-ERROR: 네트워크 연결 실패
+      if (error.message === 'NETWORK-ERROR') {
+        const translatedMessage = translateErrorCode(error.message);
+        showError(translatedMessage);
+        // UI 롤백
+        state.isLiked = originalLiked;
+        if (state.post && state.post.stats) {
+          state.post.stats.likeCount = originalCount;
+        }
+        updateLikeButton(originalLiked);
+        updateLikeCount(originalCount);
+        return;
+      }
+
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       // LIKE-001 에러 처리: 이미 좋아요가 눌려있으면 취소 시도
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -397,23 +411,30 @@
     } catch (error) {
       console.error('Failed to submit comment:', error);
 
-      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      // 문제 1: 댓글 수정 중 404/COMMENT-001/COMMENT-003 에러 처리
-      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      const errorCode = error.message.match(/([A-Z]+-\d+)/)?.[1];
-
-      if (errorCode === 'COMMENT-001' || errorCode === 'COMMENT-003') {
-        // 댓글이 이미 삭제된 경우
-        Toast.error('이미 삭제된 댓글입니다.', '오류');
-        if (state.editingCommentId) {
-          removeCommentFromList(state.editingCommentId);
-        }
+      // NETWORK-ERROR: 네트워크 연결 실패
+      if (error.message === 'NETWORK-ERROR') {
+        const translatedMessage = translateErrorCode(error.message);
+        Toast.error(translatedMessage, '네트워크 오류', 3000);
         resetCommentForm();
       } else {
-        // 일반 에러
-        const translatedMessage = translateErrorCode(error.message);
-        showError(translatedMessage || '댓글 작성에 실패했습니다.');
-        resetCommentForm();
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 문제 1: 댓글 수정 중 404/COMMENT-001/COMMENT-003 에러 처리
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        const errorCode = error.message.match(/([A-Z]+-\d+)/)?.[1];
+
+        if (errorCode === 'COMMENT-001' || errorCode === 'COMMENT-003') {
+          // 댓글이 이미 삭제된 경우
+          Toast.error('이미 삭제된 댓글입니다.', '오류');
+          if (state.editingCommentId) {
+            removeCommentFromList(state.editingCommentId);
+          }
+          resetCommentForm();
+        } else {
+          // 일반 에러
+          const translatedMessage = translateErrorCode(error.message);
+          showError(translatedMessage || '댓글 작성에 실패했습니다.');
+          resetCommentForm();
+        }
       }
     } finally {
       // 제출 완료: 버튼 활성화
@@ -505,18 +526,24 @@
     } catch (error) {
       console.error('Failed to delete comment:', error);
 
-      // 404/COMMENT-001/COMMENT-003 에러 처리
-      const errorCode = error.message.match(/([A-Z]+-\d+)/)?.[1];
-
-      if (errorCode === 'COMMENT-001' || errorCode === 'COMMENT-003') {
-        Toast.error('이미 삭제된 댓글입니다.', '오류');
-        removeCommentFromList(commentId);
-        if (state.editingCommentId === parseInt(commentId)) {
-          resetCommentForm();
-        }
-      } else {
+      // NETWORK-ERROR: 네트워크 연결 실패
+      if (error.message === 'NETWORK-ERROR') {
         const translatedMessage = translateErrorCode(error.message);
-        showError(translatedMessage || '댓글 삭제에 실패했습니다.');
+        Toast.error(translatedMessage, '네트워크 오류', 3000);
+      } else {
+        // 404/COMMENT-001/COMMENT-003 에러 처리
+        const errorCode = error.message.match(/([A-Z]+-\d+)/)?.[1];
+
+        if (errorCode === 'COMMENT-001' || errorCode === 'COMMENT-003') {
+          Toast.error('이미 삭제된 댓글입니다.', '오류');
+          removeCommentFromList(commentId);
+          if (state.editingCommentId === parseInt(commentId)) {
+            resetCommentForm();
+          }
+        } else {
+          const translatedMessage = translateErrorCode(error.message);
+          showError(translatedMessage || '댓글 삭제에 실패했습니다.');
+        }
       }
     }
   }
