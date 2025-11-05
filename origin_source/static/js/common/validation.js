@@ -8,13 +8,18 @@
  * 이메일 형식 검증
  * RFC 5322 간소화 버전
  *
+ * 규칙:
+ * - local part: 공백, @를 제외한 문자 1개 이상
+ * - domain: 공백, @를 제외한 문자 1개 이상
+ * - TLD: 영문자만 2자 이상 (.com, .kr, .co.kr 등)
+ *
  * @param {string} email
  * @returns {boolean}
  */
 function isValidEmail(email) {
     if (!email || typeof email !== 'string') return false;
 
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const regex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
     return regex.test(email.trim());
 }
 
