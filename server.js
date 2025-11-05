@@ -9,9 +9,9 @@ const PORT = process.env.PORT || 3000;
 // API Base URL 설정 (환경변수 기반)
 // ========================================
 // 로컬: localhost:8080
-// EC2: EC2_PUBLIC_IP 환경변수 사용 (브라우저에서 접근하므로 Public IP 필수)
-const API_BASE_URL = process.env.EC2_PUBLIC_IP
-  ? `http://${process.env.EC2_PUBLIC_IP}:8080`
+// EC2: EC2_PRIVATE_IP 환경변수 사용 (Private IP로 내부 통신)
+const API_BASE_URL = process.env.EC2_PRIVATE_IP
+  ? `http://${process.env.EC2_PRIVATE_IP}:8080`
   : 'http://localhost:8080';
 
 console.log(`🔧 API_BASE_URL: ${API_BASE_URL}`);
