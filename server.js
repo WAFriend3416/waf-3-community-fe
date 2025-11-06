@@ -111,6 +111,23 @@ app.get('/board/:id/edit', (req, res) => {
 });
 
 // ========================================
+// 백엔드 SSR 페이지 리다이렉트 (Thymeleaf)
+// ========================================
+app.get('/term', (req, res) => {
+  const backendUrl = process.env.EC2_PUBLIC_IP
+    ? `http://${process.env.EC2_PUBLIC_IP}:8080/term`
+    : 'http://localhost:8080/term';
+  res.redirect(backendUrl);
+});
+
+app.get('/policy', (req, res) => {
+  const backendUrl = process.env.EC2_PUBLIC_IP
+    ? `http://${process.env.EC2_PUBLIC_IP}:8080/policy`
+    : 'http://localhost:8080/policy';
+  res.redirect(backendUrl);
+});
+
+// ========================================
 // 정적 파일 서빙 (Clean URL 라우팅 후에 실행)
 // ========================================
 app.use(express.static(path.join(__dirname, 'origin_source/static'), {
