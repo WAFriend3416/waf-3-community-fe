@@ -113,17 +113,17 @@ app.get('/board/:id/edit', (req, res) => {
 // ========================================
 // 백엔드 SSR 페이지 리다이렉트 (Thymeleaf)
 // ========================================
-app.get('/term', (req, res) => {
+app.get('/terms', (req, res) => {
   const backendUrl = process.env.EC2_PUBLIC_IP
-    ? `http://${process.env.EC2_PUBLIC_IP}:8080/term`
-    : 'http://localhost:8080/term';
+    ? `http://${process.env.EC2_PUBLIC_IP}:8080/terms`
+    : 'http://localhost:8080/terms';
   res.redirect(backendUrl);
 });
 
-app.get('/policy', (req, res) => {
+app.get('/privacy', (req, res) => {
   const backendUrl = process.env.EC2_PUBLIC_IP
-    ? `http://${process.env.EC2_PUBLIC_IP}:8080/policy`
-    : 'http://localhost:8080/policy';
+    ? `http://${process.env.EC2_PUBLIC_IP}:8080/privacy`
+    : 'http://localhost:8080/privacy';
   res.redirect(backendUrl);
 });
 
