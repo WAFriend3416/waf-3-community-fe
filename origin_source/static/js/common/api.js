@@ -408,3 +408,92 @@ function getCsrfToken() {
     }
     return null;
 }
+
+// ========================================
+// Lambda 업로드 (패턴 2)
+// ========================================
+
+// Lambda API Gateway URL (server.js에서 환경변수로 주입 또는 하드코딩)
+const LAMBDA_API_URL = window.LAMBDA_API_URL || 'https://your-api-gateway-url.execute-api.region.amazonaws.com/prod/upload';
+
+/**
+ * Lambda를 통한 이미지 업로드 (패턴 2 - 1단계)
+ * Client → API Gateway → Lambda → S3
+ *
+ * @param {File} file - 업로드할 이미지 파일
+ * @returns {Promise<{imageUrl: string}>} - S3 이미지 URL
+ */
+async function uploadImageLambda(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const response = await fetch(LAMBDA_API_URL, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Lambda upload failed');
+        }
+
+        const data = await response.json();
+        return { imageUrl: data.imageUrl };  // Lambda 응답에서 imageUrl 추출
+    } catch (error) {
+        console.error('Lambda upload error:', error);
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+            const networkError = new Error('NETWORK-ERROR');
+            networkError.originalError = error;
+            throw networkError;
+        }
+        throw error;
+    }
+}
+
+/**
+ * 이미지 메타데이터 저장 (패턴 2 - 2단계)
+ * Client → Backend → DB
+ *
+ * @param {string} imageUrl - S3 이미지 URL
+ * @returns {Promise<{imageId: number}>} - DB에 저장된 imageId
+ */
+async function saveImageMetadata(imageUrl) {
+    const accessToken = getAccessToken();
+    const csrfToken = getCsrfToken();
+
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+    if (csrfToken) {
+        headers['X-XSRF-TOKEN'] = csrfToken;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/images/metadata`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: headers,
+            body: JSON.stringify({ imageUrl })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Metadata save failed');
+        }
+
+        const data = await response.json();
+        return { imageId: data.data.imageId };  // Backend 응답에서 imageId 추출
+    } catch (error) {
+        console.error('Metadata save error:', error);
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+            const networkError = new Error('NETWORK-ERROR');
+            networkError.originalError = error;
+            throw networkError;
+        }
+        throw error;
+    }
+}

@@ -45,6 +45,10 @@
     profileDropdown: null,
     profileImage: null,
 
+    // Test elements
+    testUploadButton: null,
+    testResultDiv: null,
+
     // Error elements
     titleError: null,
     contentError: null,
@@ -78,6 +82,10 @@
     elements.submitButton = document.querySelector('[data-action="submit"]');
     elements.profileDropdown = document.querySelector('[data-dropdown="profile"]');
     elements.profileImage = document.querySelector('[data-profile="image"]');
+
+    // Test elements
+    elements.testUploadButton = document.querySelector('[data-action="test-upload"]');
+    elements.testResultDiv = document.querySelector('[data-test-result]');
 
     // Error elements
     elements.titleError = document.querySelector('[data-error="title"]');
@@ -121,6 +129,11 @@
     // Cancel button
     if (elements.cancelButton) {
       elements.cancelButton.addEventListener('click', handleCancel);
+    }
+
+    // Test upload button
+    if (elements.testUploadButton) {
+      elements.testUploadButton.addEventListener('click', handleTestUpload);
     }
 
     // Profile menu navigation
@@ -286,6 +299,140 @@
   }
 
   // handleLogout은 auth-header.js의 performLogout() 사용
+
+  // ============================================
+  // Test Upload Handler
+  // ============================================
+  async function handleTestUpload(e) {
+    e.preventDefault();
+
+    // 1. 선택된 패턴 확인
+    const pattern1Radio = document.querySelector('input[name="uploadPattern"][value="pattern1"]');
+    const pattern2Radio = document.querySelector('input[name="uploadPattern"][value="pattern2"]');
+    const selectedPattern = pattern1Radio.checked ? 'pattern1' : (pattern2Radio.checked ? 'pattern2' : null);
+
+    if (!selectedPattern) {
+      showTestResult('오류: 업로드 패턴을 선택해주세요.', false);
+      return;
+    }
+
+    // 2. 이미지 파일 검증
+    const file = elements.imageInput?.files[0];
+    if (!file) {
+      showTestResult('오류: 이미지를 먼저 선택해주세요.', false);
+      return;
+    }
+
+    if (!validateImage(file)) {
+      showTestResult('오류: 이미지 파일 검증에 실패했습니다.', false);
+      return;
+    }
+
+    // 3. 버튼 비활성화
+    elements.testUploadButton.disabled = true;
+    elements.testUploadButton.textContent = '업로드 중...';
+    showTestResult('업로드 중...', null);
+
+    try {
+      if (selectedPattern === 'pattern1') {
+        // 패턴 1: Backend 직접 업로드
+        await testPattern1(file);
+      } else {
+        // 패턴 2: Lambda + Backend 분리
+        await testPattern2(file);
+      }
+    } catch (error) {
+      console.error('Test upload failed:', error);
+      const errorMessage = translateErrorCode(error.message);
+      showTestResult(`오류: ${errorMessage}`, false);
+    } finally {
+      // 4. 버튼 복원
+      elements.testUploadButton.disabled = false;
+      elements.testUploadButton.textContent = '테스트 업로드 실행';
+    }
+  }
+
+  async function testPattern1(file) {
+    const startTime = Date.now();
+
+    try {
+      const result = await uploadImage(file);
+      const elapsed = Date.now() - startTime;
+
+      const message = `✅ 패턴 1 성공 (${elapsed}ms)
+
+단계: Client → Backend → S3 + DB
+
+결과:
+- imageId: ${result.imageId}
+- imageUrl: ${result.imageUrl}
+
+다음 단계: 게시글 작성 시 imageId를 전달하여 사용할 수 있습니다.`;
+
+      showTestResult(message, true);
+      Toast.success('패턴 1 업로드 성공', '테스트 완료');
+    } catch (error) {
+      const elapsed = Date.now() - startTime;
+      throw new Error(`패턴 1 실패 (${elapsed}ms): ${error.message}`);
+    }
+  }
+
+  async function testPattern2(file) {
+    const startTime = Date.now();
+
+    try {
+      // 1단계: Lambda → S3
+      const step1Start = Date.now();
+      const lambdaResult = await uploadImageLambda(file);
+      const step1Elapsed = Date.now() - step1Start;
+
+      // 2단계: Backend → DB
+      const step2Start = Date.now();
+      const metadataResult = await saveImageMetadata(lambdaResult.imageUrl);
+      const step2Elapsed = Date.now() - step2Start;
+
+      const totalElapsed = Date.now() - startTime;
+
+      const message = `✅ 패턴 2 성공 (${totalElapsed}ms)
+
+1단계: Client → Lambda → S3 (${step1Elapsed}ms)
+- imageUrl: ${lambdaResult.imageUrl}
+
+2단계: Client → Backend → DB (${step2Elapsed}ms)
+- imageId: ${metadataResult.imageId}
+
+다음 단계: 게시글 작성 시 imageId를 전달하여 사용할 수 있습니다.`;
+
+      showTestResult(message, true);
+      Toast.success('패턴 2 업로드 성공', '테스트 완료');
+    } catch (error) {
+      const elapsed = Date.now() - startTime;
+      throw new Error(`패턴 2 실패 (${elapsed}ms): ${error.message}`);
+    }
+  }
+
+  function showTestResult(message, success) {
+    if (!elements.testResultDiv) return;
+
+    const resultParagraph = elements.testResultDiv.querySelector('p');
+    if (resultParagraph) {
+      resultParagraph.textContent = message;
+    }
+
+    elements.testResultDiv.style.display = 'block';
+
+    // 색상 적용
+    if (success === true) {
+      elements.testResultDiv.style.borderLeft = '4px solid var(--color-success)';
+      elements.testResultDiv.style.backgroundColor = '#f0fdf4';
+    } else if (success === false) {
+      elements.testResultDiv.style.borderLeft = '4px solid var(--color-error)';
+      elements.testResultDiv.style.backgroundColor = '#fef2f2';
+    } else {
+      elements.testResultDiv.style.borderLeft = '4px solid var(--color-info)';
+      elements.testResultDiv.style.backgroundColor = '#eff6ff';
+    }
+  }
 
   // ============================================
   // Validation Functions

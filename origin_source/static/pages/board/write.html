@@ -90,6 +90,36 @@
           <span class="file-upload__helper">* JPG, PNG, GIF (최대 5MB)</span>
           <span class="file-upload__error" data-error="image"></span>
         </div>
+
+        <!-- Lambda 업로드 테스트 섹션 -->
+        <div class="test-section" style="margin-top: 2rem; padding: 1.5rem; border: 2px dashed var(--color-border); border-radius: 8px; background-color: var(--color-bg-secondary);">
+          <h3 style="margin-bottom: 1rem; font-size: 1rem; font-weight: 600; color: var(--color-text-primary);">🧪 이미지 업로드 테스트</h3>
+
+          <div style="margin-bottom: 1rem;">
+            <label style="display: flex; align-items: center; margin-bottom: 0.5rem; cursor: pointer;">
+              <input type="radio" name="uploadPattern" value="pattern1" checked style="margin-right: 0.5rem;">
+              <span>패턴 1: Backend 직접 업로드 (기존 방식)</span>
+            </label>
+            <p style="margin-left: 1.5rem; font-size: 0.875rem; color: var(--color-text-secondary);">Client → Backend → S3 + DB</p>
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label style="display: flex; align-items: center; margin-bottom: 0.5rem; cursor: pointer;">
+              <input type="radio" name="uploadPattern" value="pattern2" style="margin-right: 0.5rem;">
+              <span>패턴 2: Lambda + Backend 분리 (신규 방식)</span>
+            </label>
+            <p style="margin-left: 1.5rem; font-size: 0.875rem; color: var(--color-text-secondary);">Client → Lambda → S3, Client → Backend → DB</p>
+          </div>
+
+          <button type="button" class="btn btn--secondary" data-action="test-upload" style="width: 100%;">
+            테스트 업로드 실행
+          </button>
+
+          <div data-test-result style="margin-top: 1rem; padding: 1rem; background-color: var(--color-bg-primary); border-radius: 4px; display: none;">
+            <p style="font-size: 0.875rem; white-space: pre-wrap;"></p>
+          </div>
+        </div>
+
         <div class="write-form__actions">
           <button type="button" class="btn btn--secondary" data-action="cancel">취소</button>
           <button type="submit" class="btn btn--primary" data-action="submit">작성완료</button>
