@@ -67,7 +67,7 @@ jobs:
           # 1. 필수 프로그램 확인
           echo "=== 필수 프로그램 확인 ==="
           command -v docker >/dev/null 2>&1 || { echo "Docker 미설치"; exit 1; }
-          command -v docker-compose >/dev/null 2>&1 || command -v "docker compose version" >/dev/null 2>&1 || { echo "Docker Compose 미설치"; exit 1; }
+          docker compose version >/dev/null 2>&1 || { echo "Docker Compose 미설치"; exit 1; }
           echo "모든 필수 프로그램 확인 완료"
 
           # 2. 작업 디렉토리 이동
@@ -79,8 +79,8 @@ jobs:
 
           # 4. 이미지 풀 & 실행
           echo "=== 컨테이너 배포 ==="
-          docker-compose pull
-          docker-compose --env-file .env up -d
+          docker compose pull
+          docker compose --env-file .env up -d
 
           # 5. 헬스체크
           echo "=== 헬스체크 (최대 30초) ==="
@@ -92,6 +92,6 @@ jobs:
             sleep 1
           done
           echo "헬스체크 실패"
-          docker-compose logs --tail 30
+          docker compose logs --tail 30
           exit 1
           ENDSSH
