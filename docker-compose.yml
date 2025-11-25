@@ -1,7 +1,7 @@
 services:
   frontend:
     image: ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
-    container_name: community-frontend
+    container_name: community-fe
     ports:
       - "3000:3000"
     environment:
