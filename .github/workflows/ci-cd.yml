@@ -67,7 +67,7 @@ jobs:
           # 1. 필수 프로그램 확인
           echo "=== 필수 프로그램 확인 ==="
           command -v docker >/dev/null 2>&1 || { echo "Docker 미설치"; exit 1; }
-          command -v docker-compose >/dev/null 2>&1 || command -v "docker compose" >/dev/null 2>&1 || { echo "Docker Compose 미설치"; exit 1; }
+          command -v docker-compose >/dev/null 2>&1 || command -v "docker compose version" >/dev/null 2>&1 || { echo "Docker Compose 미설치"; exit 1; }
           echo "모든 필수 프로그램 확인 완료"
 
           # 2. 작업 디렉토리 이동
