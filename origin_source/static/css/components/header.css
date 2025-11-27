@@ -140,6 +140,60 @@
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
+  position: relative;
+}
+
+/* DC2 Logo Hover Effect - Smooth Animation */
+.header__logo-text,
+.header__title {
+  position: relative;
+  display: inline-block;
+}
+
+.header__logo-short,
+.header__logo-full {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.header__logo-short {
+  display: inline-block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.header__logo-full {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) translateX(-10px);
+  opacity: 0;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.header__logo:hover .header__logo-short,
+.header__title:hover .header__logo-short,
+.header__title a:hover .header__logo-short {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+.header__logo:hover .header__logo-full,
+.header__title:hover .header__logo-full,
+.header__title a:hover .header__logo-full {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+  pointer-events: auto;
+}
+
+/* Static Logo - No Animation (for register, etc.) */
+.header--static-logo .header__logo-short {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+.header--static-logo .header__logo-full {
+  display: none !important;
 }
 
 /* Header Title */
@@ -435,6 +489,23 @@
     font-size: var(--font-size-lg);
   }
 
+  /* Mobile: Always show DC2 (no hover on mobile) */
+  .header__logo-short {
+    display: inline-block;
+  }
+
+  .header__logo-full {
+    display: none;
+  }
+
+  .header__logo:hover .header__logo-short {
+    display: inline-block;
+  }
+
+  .header__logo:hover .header__logo-full {
+    display: none;
+  }
+
   .header__title {
     font-size: var(--font-size-lg);
   }
@@ -555,4 +626,40 @@
   .profile-menu__dropdown {
     right: -16px;
   }
+}
+
+/* ========================================
+   Theme Toggle Button
+   ======================================== */
+
+.header__theme-toggle {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-2);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header__theme-toggle:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-tertiary);
+}
+
+.header__theme-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.theme-icon--sun,
+.theme-icon--moon {
+  transition: transform 0.3s ease;
+}
+
+.theme-icon--moon {
+  display: none;
 }

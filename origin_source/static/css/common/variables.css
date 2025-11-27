@@ -194,3 +194,45 @@
   --avatar-lg: 48px;
   --avatar-xl: 120px;
 }
+
+/* ===== Light Theme ===== */
+[data-theme="light"] {
+  /* Primary Colors - More vibrant for light mode */
+  --color-brand-primary: #2563EB;
+  --color-brand-primary-hover: #1D4ED8;
+  --color-brand-primary-active: #1E40AF;
+
+  /* Background Colors */
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F8FAFC;
+  --color-bg-tertiary: #F1F5F9;
+  --color-bg-elevated: #FFFFFF;
+
+  /* Text Colors */
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #94A3B8;
+  --color-text-disabled: #CBD5E1;
+
+  /* Border Colors */
+  --color-border-default: #E2E8F0;
+  --color-border-focus: #2563EB;
+
+  /* Semantic Colors - More saturated */
+  --color-success: #059669;
+  --color-error: #DC2626;
+  --color-warning: #D97706;
+  --color-info: #2563EB;
+
+  /* Card */
+  --card-bg: var(--color-bg-primary);
+
+  /* Shadows - softer for light mode */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.06),
+                 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06),
+               0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08),
+               0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}

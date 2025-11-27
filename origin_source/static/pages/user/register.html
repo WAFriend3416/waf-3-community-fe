@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>회원가입 - 아무 말 대잔치</title>
+  <title>회원가입 - DC2</title>
 
   <!-- Runtime Config -->
   <script src="/config.js"></script>
@@ -14,8 +14,8 @@
 
   <!-- Open Graph Meta Tags -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="아무 말 대잔치">
-  <meta property="og:title" content="회원가입 - 아무 말 대잔치">
+  <meta property="og:site_name" content="DC2">
+  <meta property="og:title" content="회원가입 - DC2">
   <meta property="og:description" content="무료로 가입하고 개발자 커뮤니티에 참여하세요">
   <meta property="og:url" content="http://localhost:3000/page/register">
 
@@ -38,15 +38,19 @@
 </head>
 <body>
   <!-- Header with Back Button -->
-  <header class="header header--with-back">
+  <header class="header header--with-back header--static-logo">
     <div class="header__container">
       <button class="header__back" data-action="go-back" aria-label="뒤로가기">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
-      <h1 class="header__title"><a href="/board">아무 말 대잔치</a></h1>
-      <div class="header__spacer"></div>
+      <h1 class="header__title">
+        <a href="/board">
+          <span class="header__logo-short">DC2</span>
+          <span class="header__logo-full">Developer Community Club</span>
+        </a>
+      </h1>
     </div>
   </header>
 
@@ -222,7 +226,7 @@
 
       <!-- Copyright -->
       <p class="footer__copyright">
-        Copyright © 2025 아무 말 대잔치. All rights reserved.
+        Copyright © 2025 DC2. All rights reserved.
       </p>
     </div>
   </footer>
@@ -232,6 +236,7 @@
   <script src="/js/common/api.js"></script>
   <script src="/js/common/validation.js"></script>
   <script src="/js/common/utils.js"></script>
+  <script src="/js/common/theme.js"></script>
 
   <!-- Page Script -->
   <script src="/js/pages/user/register.js"></script>

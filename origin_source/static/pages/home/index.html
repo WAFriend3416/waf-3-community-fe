@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>아무 말 대잔치 - KTB 개발자 커뮤니티</title>
+  <title>DC2 - KTB 개발자 커뮤니티</title>
 
   <!-- Runtime Config -->
   <script src="/config.js"></script>
@@ -15,15 +15,15 @@
 
   <!-- Open Graph Meta Tags (SNS 공유) -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="아무 말 대잔치">
-  <meta property="og:title" content="아무 말 대잔치 - KTB 개발자 커뮤니티">
+  <meta property="og:site_name" content="DC2">
+  <meta property="og:title" content="DC2 - KTB 개발자 커뮤니티">
   <meta property="og:description" content="개발자들이 지식을 공유하고 함께 성장하는 커뮤니티 플랫폼">
   <meta property="og:url" content="http://localhost:3000/">
   <meta property="og:image" content="http://localhost:3000/images/og-image.png">
 
   <!-- Twitter Card Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="아무 말 대잔치 - KTB 개발자 커뮤니티">
+  <meta name="twitter:title" content="DC2 - KTB 개발자 커뮤니티">
   <meta name="twitter:description" content="개발자들이 지식을 공유하고 함께 성장하는 커뮤니티 플랫폼">
   <meta name="twitter:image" content="http://localhost:3000/images/og-image.png">
 
@@ -45,8 +45,22 @@
   <!-- Header -->
   <header class="header">
     <div class="header__container">
-      <h1 class="header__title">아무 말 대잔치</h1>
+      <h1 class="header__title">
+        <span class="header__logo-short">DC2</span>
+        <span class="header__logo-full">Developer Community Club</span>
+      </h1>
       <div class="header__auth">
+        <!-- 테마 토글 버튼 -->
+        <button class="header__theme-toggle" data-action="toggle-theme" aria-label="테마 전환">
+          <svg class="theme-icon--sun" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 2V4M12 20V22M4 12H2M22 12H20M6.34 6.34L4.93 4.93M19.07 4.93L17.66 6.34M6.34 17.66L4.93 19.07M19.07 19.07L17.66 17.66" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <svg class="theme-icon--moon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
         <!-- 비로그인 상태 -->
         <div data-auth="guest" style="display: none;">
           <a href="/page/login" class="btn btn--secondary">로그인</a>
@@ -122,7 +136,7 @@
     <section class="features">
       <div class="features__container">
         <div class="features__header">
-          <h2 class="features__title">왜 아무 말 대잔치인가요?</h2>
+          <h2 class="features__title">왜 DC2인가요?</h2>
           <p class="features__description">개발자들이 자유롭게 소통하고 성장할 수 있는 모든 것</p>
         </div>
         <div class="features__grid">
@@ -207,13 +221,14 @@
 
       <!-- Copyright -->
       <p class="footer__copyright">
-        Copyright © 2025 아무 말 대잔치. All rights reserved.
+        Copyright © 2025 DC2. All rights reserved.
       </p>
     </div>
   </footer>
 
   <!-- Common Scripts -->
   <script src="/js/common/api.js"></script>
+  <script src="/js/common/theme.js"></script>
   <script src="/js/common/auth-header.js"></script>
 
   <!-- Page Script -->
