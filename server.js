@@ -116,9 +116,4 @@ app.listen(PORT, () => {
   console.log('='.repeat(50));
   console.log('✅ KTB 커뮤니티 프론트엔드 서버 실행 중');
   console.log('='.repeat(50));
-  console.log(`🌐 로컬 주소:     http://localhost:${PORT}`);
-  console.log(`📁 정적 파일:     origin_source/static/`);
-  console.log(`🔗 백엔드 API:    http://localhost:8080 (Spring Boot)`);
-  console.log(`📄 로그인 페이지: http://localhost:${PORT}/pages/user/login.html`);
-  console.log('='.repeat(50));
 });
