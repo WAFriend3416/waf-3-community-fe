@@ -412,7 +412,9 @@ async function uploadImage(file) {
             );
         }
 
-        const { imageId, uploadUrl } = presignedData;
+        // 백엔드 응답: { image_id, upload_url } (snake_case)
+        const imageId = presignedData.image_id;
+        const uploadUrl = presignedData.upload_url;
 
         // Step 2: S3 직접 업로드
         const uploadResponse = await fetch(uploadUrl, {
