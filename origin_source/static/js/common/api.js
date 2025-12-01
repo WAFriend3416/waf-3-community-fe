@@ -364,50 +364,55 @@ async function uploadImageMultipart(file) {
  * @returns {Promise<{imageId: number, imageUrl: string}>}
  */
 async function uploadImage(file) {
-    // Guest Token 우선 사용 (회원가입), 없으면 Access Token (로그인 사용자)
-    let authToken = sessionStorage.getItem('guestToken');
-    if (!authToken) {
-        authToken = getAccessToken();
-    }
-
-    const csrfToken = getCsrfToken();
+    // Guest Token 확인 (회원가입 시)
+    const guestToken = sessionStorage.getItem('guestToken');
 
     try {
-        // Step 1: Presigned URL 발급
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        if (authToken) {
-            headers['Authorization'] = `Bearer ${authToken}`;
-        }
-        if (csrfToken) {
-            headers['X-XSRF-TOKEN'] = csrfToken;
-        }
+        let presignedData;
 
-        const presignedResponse = await fetch(
-            `${API_BASE_URL}${API_PREFIX}/images/presigned-url?filename=${encodeURIComponent(file.name)}`,
-            {
-                method: 'GET',
-                credentials: 'include',
-                headers: headers
+        if (guestToken) {
+            // Guest Token 사용 (회원가입) - 직접 fetch
+            const csrfToken = getCsrfToken();
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${guestToken}`
+            };
+            if (csrfToken) {
+                headers['X-XSRF-TOKEN'] = csrfToken;
             }
-        );
 
-        if (!presignedResponse.ok) {
-            // 404 또는 CORS 에러 시 JSON 파싱 실패 가능
-            let errorMessage = 'IMAGE-004';
-            try {
-                const errorData = await presignedResponse.json();
-                errorMessage = errorData.message || 'IMAGE-004';
-            } catch (parseError) {
-                console.error('Failed to parse presigned URL error response:', parseError);
-                errorMessage = presignedResponse.status === 404 ? 'IMAGE-001' : 'IMAGE-004';
+            const presignedResponse = await fetch(
+                `${API_BASE_URL}${API_PREFIX}/images/presigned-url?filename=${encodeURIComponent(file.name)}`,
+                {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: headers
+                }
+            );
+
+            if (!presignedResponse.ok) {
+                let errorMessage = 'IMAGE-004';
+                try {
+                    const errorData = await presignedResponse.json();
+                    errorMessage = errorData.message || 'IMAGE-004';
+                } catch (parseError) {
+                    console.error('Failed to parse presigned URL error response:', parseError);
+                    errorMessage = presignedResponse.status === 404 ? 'IMAGE-001' : 'IMAGE-004';
+                }
+                throw new Error(errorMessage);
             }
-            throw new Error(errorMessage);
+
+            const responseData = await presignedResponse.json();
+            presignedData = responseData.data;
+        } else {
+            // Access Token 사용 (로그인 사용자) - fetchWithAuth로 자동 토큰 갱신
+            presignedData = await fetchWithAuth(
+                `/images/presigned-url?filename=${encodeURIComponent(file.name)}`,
+                { method: 'GET' }
+            );
         }
 
-        const presignedData = await presignedResponse.json();
-        const { imageId, uploadUrl } = presignedData.data;
+        const { imageId, uploadUrl } = presignedData;
 
         // Step 2: S3 직접 업로드
         const uploadResponse = await fetch(uploadUrl, {
