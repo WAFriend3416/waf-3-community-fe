@@ -129,9 +129,9 @@
       elements.backButton.addEventListener('click', handleBack);
     }
 
-    // Like button
+    // Like button (Throttle: 1초 간격으로만 동작)
     if (elements.likeButton) {
-      elements.likeButton.addEventListener('click', handleLikeToggle);
+      elements.likeButton.addEventListener('click', throttle(handleLikeToggle, 1000));
     }
 
     // Post actions

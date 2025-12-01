@@ -9,6 +9,8 @@
 // - 로컬 개발: window.APP_CONFIG.API_BASE_URL = 'http://localhost:8080'
 // - EC2 배포: window.APP_CONFIG.API_BASE_URL = '' (상대 경로, Nginx 라우팅)
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || '';
+// API Prefix: 로컬 '' (기존 방식), 프로덕션 '/api/v1' (ALB path rewrite)
+const API_PREFIX = window.APP_CONFIG?.API_PREFIX || '';
 const LOGIN_URL = '/page/login';
 
 // ========================================
@@ -111,7 +113,7 @@ async function fetchWithAuth(url, options = {}) {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}${url}`, config);
+        const response = await fetch(`${API_BASE_URL}${API_PREFIX}${url}`, config);
 
         // 401 Unauthorized → 에러 코드 우선 체크
         if (response.status === 401) {
@@ -141,7 +143,7 @@ async function fetchWithAuth(url, options = {}) {
             const refreshed = await refreshAccessToken();
             if (refreshed) {
                 // 토큰 갱신 성공 → 원래 요청 재시도
-                const retryResponse = await fetch(`${API_BASE_URL}${url}`, config);
+                const retryResponse = await fetch(`${API_BASE_URL}${API_PREFIX}${url}`, config);
                 return handleResponse(retryResponse);
             } else {
                 // 토큰 갱신 실패 → 로그인 페이지로 리다이렉트
@@ -170,6 +172,7 @@ async function fetchWithAuth(url, options = {}) {
  * 응답 처리
  * - 204 No Content: { success: true } 반환
  * - 200 OK: ApiResponse.data 필드 반환
+ * - 429 Too Many Requests: Toast 알림 + Error throw
  * - 4xx/5xx: Error throw
  *
  * @param {Response} response - fetch Response 객체
@@ -177,6 +180,24 @@ async function fetchWithAuth(url, options = {}) {
  */
 async function handleResponse(response) {
     if (response.status === 204) return { success: true };
+
+    // 429 Too Many Requests - Rate Limit 처리
+    if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After');
+        const message = translateErrorCode('COMMON-004');
+
+        // Toast 알림 (toast.js가 로드되어 있으면)
+        if (typeof Toast !== 'undefined') {
+            const retryMessage = retryAfter
+                ? `${message} (${retryAfter}초 후 다시 시도)`
+                : message;
+            Toast.warning(retryMessage, 'Rate Limit');
+        }
+
+        const error = new Error('COMMON-004');
+        error.retryAfter = retryAfter ? parseInt(retryAfter, 10) : null;
+        throw error;
+    }
 
     const data = await response.json();
     if (response.ok) return data.data; // ApiResponse의 data 필드 반환
@@ -205,7 +226,7 @@ async function refreshAccessToken() {
     // 새로운 갱신 시작
     refreshTokenPromise = (async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/auth/refresh_token`, {
+            const response = await fetch(`${API_BASE_URL}${API_PREFIX}/auth/refresh_token`, {
                 method: 'POST',
                 credentials: 'include',  // refresh_token Cookie 자동 전송
                 headers: { 'Content-Type': 'application/json' }
@@ -243,7 +264,7 @@ async function refreshAccessToken() {
  */
 async function logout() {
     try {
-        await fetch(`${API_BASE_URL}/auth/logout`, {
+        await fetch(`${API_BASE_URL}${API_PREFIX}/auth/logout`, {
             method: 'POST',
             credentials: 'include',  // Cookie 자동 전송
             headers: { 'Content-Type': 'application/json' }
@@ -311,7 +332,7 @@ async function uploadImageMultipart(file) {
 
     let response;
     try {
-        response = await fetch(`${API_BASE_URL}/images`, {
+        response = await fetch(`${API_BASE_URL}${API_PREFIX}/images`, {
             method: 'POST',
             credentials: 'include',  // Cookie 자동 전송
             headers: headers,  // Authorization + CSRF 토큰 추가
@@ -334,38 +355,79 @@ async function uploadImageMultipart(file) {
 }
 
 /**
- * 이미지 업로드 (환경변수로 API Gateway/Multipart 선택)
- * - LAMBDA_API_URL 있으면: API Gateway 2단계 업로드 (S3 + 메타데이터)
- * - LAMBDA_API_URL 없으면: Multipart 업로드 (Backend 직접)
+ * 이미지 업로드 (Presigned URL 방식)
+ * 1. BE에서 Presigned URL 발급 (GET /images/presigned-url)
+ * 2. S3에 직접 업로드 (PUT uploadUrl)
+ * 3. imageId 반환
  *
  * @param {File} file - 업로드할 이미지 파일
  * @returns {Promise<{imageId: number, imageUrl: string}>}
  */
 async function uploadImage(file) {
-    if (LAMBDA_API_URL) {
-        // API Gateway 방식: 2단계 업로드 (Client → API Gateway → Lambda → S3)
-        try {
-            // Step 1: API Gateway → Lambda → S3
-            const step1Result = await uploadImageToLambda(file);
+    // Guest Token 우선 사용 (회원가입), 없으면 Access Token (로그인 사용자)
+    let authToken = sessionStorage.getItem('guestToken');
+    if (!authToken) {
+        authToken = getAccessToken();
+    }
 
-            // Step 2: Backend → DB
-            const step2Result = await registerImageMetadata(
-                step1Result.imageUrl,
-                step1Result.fileSize,
-                step1Result.originalFilename
-            );
+    const csrfToken = getCsrfToken();
 
-            return {
-                imageId: step2Result.imageId,
-                imageUrl: step2Result.imageUrl
-            };
-        } catch (error) {
-            console.error('API Gateway upload failed:', error);
-            throw error;
+    try {
+        // Step 1: Presigned URL 발급
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
         }
-    } else {
-        // Multipart 방식: Backend 직접 업로드
-        return await uploadImageMultipart(file);
+        if (csrfToken) {
+            headers['X-XSRF-TOKEN'] = csrfToken;
+        }
+
+        const presignedResponse = await fetch(
+            `${API_BASE_URL}${API_PREFIX}/images/presigned-url?filename=${encodeURIComponent(file.name)}`,
+            {
+                method: 'GET',
+                credentials: 'include',
+                headers: headers
+            }
+        );
+
+        if (!presignedResponse.ok) {
+            const errorData = await presignedResponse.json();
+            throw new Error(errorData.message || 'IMAGE-004');
+        }
+
+        const presignedData = await presignedResponse.json();
+        const { imageId, uploadUrl } = presignedData.data;
+
+        // Step 2: S3 직접 업로드
+        const uploadResponse = await fetch(uploadUrl, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': file.type }
+        });
+
+        if (!uploadResponse.ok) {
+            throw new Error('IMAGE-002');  // S3 업로드 실패
+        }
+
+        // imageUrl: presigned URL에서 쿼리 파라미터 제거
+        const imageUrl = uploadUrl.split('?')[0];
+
+        return { imageId, imageUrl };
+
+    } catch (error) {
+        console.error('Image upload failed:', error);
+
+        // Network Error 감지
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+            const networkError = new Error('NETWORK-ERROR');
+            networkError.originalError = error;
+            throw networkError;
+        }
+
+        throw error;
     }
 }
 
@@ -446,117 +508,3 @@ function getCsrfToken() {
     return null;
 }
 
-// ========================================
-// API Gateway 이미지 업로드 (2단계 업로드)
-// ========================================
-
-// API Gateway URL (server.js가 /static/config.js에서 환경변수로 생성)
-// - 개발: window.APP_CONFIG.LAMBDA_API_URL = null (Multipart fallback)
-// - EC2 배포: window.APP_CONFIG.LAMBDA_API_URL = '/images' (Nginx 라우팅)
-// - 실제로는 Nginx가 /images → API Gateway로 프록시 (백그라운드에서 Lambda 실행)
-const LAMBDA_API_URL = window.APP_CONFIG?.LAMBDA_API_URL || '/images';
-
-/**
- * API Gateway를 통한 이미지 업로드 (Step 1: S3 업로드)
- * Client → API Gateway → Lambda → S3
- *
- * @param {File} file - 업로드할 이미지 파일
- * @returns {Promise<{imageUrl: string, fileSize: number, originalFilename: string}>} - S3 이미지 정보
- */
-async function uploadImageToLambda(file) {
-    // Guest Token 우선 사용 (회원가입), 없으면 Access Token (로그인 사용자)
-    let accessToken = sessionStorage.getItem('guestToken');
-
-    if (!accessToken) {
-        accessToken = getAccessToken();  // 기존 로직 (로그인 사용자)
-    }
-
-    try {
-        const response = await fetch(`${LAMBDA_API_URL}`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': file.type,  // image/jpeg, image/png, image/gif
-                'x-filename': file.name     // 원본 파일명
-            },
-            body: file  // 바이너리 직접 전송 (FormData 아님)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Lambda upload error response:', errorData);
-            // Lambda 에러 응답: { message: "IMAGE-002", data: {...}, timestamp: "..." }
-            const errorCode = errorData.message || 'COMMON-999';
-            throw new Error(errorCode);
-        }
-
-        const data = await response.json();
-        // Lambda 응답: { message, data: { imageUrl, fileSize, originalFilename, uploadedAt }, timestamp }
-        return {
-            imageUrl: data.data.imageUrl,
-            fileSize: data.data.fileSize,
-            originalFilename: data.data.originalFilename
-        };
-    } catch (error) {
-        console.error('Lambda upload error:', error);
-        if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            const networkError = new Error('NETWORK-ERROR');
-            networkError.originalError = error;
-            throw networkError;
-        }
-        throw error;
-    }
-}
-
-/**
- * 이미지 메타데이터 등록 (Step 2: DB 저장)
- * Client → Backend → DB
- *
- * @param {string} imageUrl - S3 이미지 URL
- * @param {number} fileSize - 파일 크기 (bytes)
- * @param {string} originalFilename - 원본 파일명
- * @returns {Promise<{imageId: number, imageUrl: string}>} - DB에 저장된 이미지 정보
- */
-async function registerImageMetadata(imageUrl, fileSize, originalFilename) {
-    const accessToken = getAccessToken();
-    const csrfToken = getCsrfToken();
-
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-    if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-    if (csrfToken) {
-        headers['X-XSRF-TOKEN'] = csrfToken;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/images/metadata`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: headers,
-            body: JSON.stringify({ imageUrl, fileSize, originalFilename })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Metadata registration failed');
-        }
-
-        const data = await response.json();
-        // Backend 응답: { message, data: { imageId, imageUrl, fileSize, originalFilename, createdAt, expiresAt }, timestamp }
-        return {
-            imageId: data.data.imageId,
-            imageUrl: data.data.imageUrl
-        };
-    } catch (error) {
-        console.error('Metadata registration error:', error);
-        if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            const networkError = new Error('NETWORK-ERROR');
-            networkError.originalError = error;
-            throw networkError;
-        }
-        throw error;
-    }
-}

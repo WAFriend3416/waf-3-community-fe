@@ -9,19 +9,17 @@ const PORT = process.env.PORT || 3000;
 // 서버 시작 시 config.js 생성 (환경변수 기반)
 // ========================================
 const BACKEND_URL = process.env.BACKEND_URL !== undefined ? process.env.BACKEND_URL : 'http://localhost:8080';
-const LAMBDA_API_URL = process.env.LAMBDA_API_URL !== undefined ? process.env.LAMBDA_API_URL : null;
+// API_PREFIX: 로컬 '' (기존 방식), 프로덕션 '/api/v1' (ALB path rewrite)
+const API_PREFIX = process.env.API_PREFIX !== undefined ? process.env.API_PREFIX : '';
 
 const configPath = path.join(__dirname, 'origin_source', 'static', 'config.js');
 const configContent = `window.APP_CONFIG = {
   API_BASE_URL: '${BACKEND_URL}',
-  LAMBDA_API_URL: ${LAMBDA_API_URL ? `'${LAMBDA_API_URL}'` : 'null'}
+  API_PREFIX: '${API_PREFIX}'
 };`;
 
 fs.writeFileSync(configPath, configContent);
 console.log(`✅ Generated config.js with BACKEND_URL=${BACKEND_URL}`);
-if (LAMBDA_API_URL) {
-  console.log(`✅ Lambda API URL: ${LAMBDA_API_URL}`);
-}
 
 // ========================================
 // .html 직접 접근 → Clean URL 리다이렉트 (정적 파일 서빙보다 먼저)
@@ -88,14 +86,14 @@ app.get('/board/:id/edit', (req, res) => {
 });
 
 // ========================================
-// 백엔드 SSR 페이지 리다이렉트 (Thymeleaf)
+// Legal 페이지 (정적 HTML 서빙)
 // ========================================
 app.get('/terms', (req, res) => {
-  res.redirect(`${BACKEND_URL}/terms`);
+  res.sendFile(path.join(__dirname, 'origin_source/static/pages/legal/terms.html'));
 });
 
 app.get('/privacy', (req, res) => {
-  res.redirect(`${BACKEND_URL}/privacy`);
+  res.sendFile(path.join(__dirname, 'origin_source/static/pages/legal/privacy.html'));
 });
 
 // ========================================
@@ -114,7 +112,7 @@ app.use((req, res) => {
 // 서버 시작
 app.listen(PORT, () => {
   console.log('='.repeat(50));
-  console.log('✅ KTB 커뮤니티 프론트엔드 서버 실행 중');
+  console.log('✅ DC2 커뮤니티 프론트엔드 서버 실행 중');
   console.log('='.repeat(50));
   console.log(`🌐 로컬 주소:     http://localhost:${PORT}`);
   console.log(`📁 정적 파일:     origin_source/static/`);

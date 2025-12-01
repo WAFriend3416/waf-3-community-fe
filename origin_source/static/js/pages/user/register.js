@@ -58,7 +58,8 @@
     async function fetchGuestToken() {
         try {
             const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || '';
-            const response = await fetch(`${API_BASE_URL}/auth/guest-token`, {
+            const API_PREFIX = window.APP_CONFIG?.API_PREFIX || '';
+            const response = await fetch(`${API_BASE_URL}${API_PREFIX}/auth/guest-token`, {
                 method: 'GET',
                 credentials: 'include'
             });
@@ -222,7 +223,8 @@
             let response;
             try {
                 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || '';
-                response = await fetch(`${API_BASE_URL}/users/signup`, {
+                const API_PREFIX = window.APP_CONFIG?.API_PREFIX || '';
+                response = await fetch(`${API_BASE_URL}${API_PREFIX}/users/signup`, {
                     method: 'POST',
                     credentials: 'include',  // HttpOnly Cookie 수신
                     headers: { 'Content-Type': 'application/json' },

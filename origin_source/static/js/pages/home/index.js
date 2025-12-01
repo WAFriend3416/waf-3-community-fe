@@ -75,11 +75,13 @@
 
     /**
      * 통계 API 호출
-     * API_BASE_URL은 api.js에서 환경별 동적 설정됨
+     * API_BASE_URL, API_PREFIX는 config.js에서 환경별 동적 설정됨
      */
     async function fetchStats() {
         try {
-            const response = await fetch(`${API_BASE_URL}/stats`, {
+            const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || '';
+            const API_PREFIX = window.APP_CONFIG?.API_PREFIX || '';
+            const response = await fetch(`${API_BASE_URL}${API_PREFIX}/stats`, {
                 credentials: 'include'
             });
 
