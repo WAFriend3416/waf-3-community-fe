@@ -417,10 +417,14 @@ async function uploadImage(file) {
         const uploadUrl = presignedData.upload_url;
 
         // Step 2: S3 직접 업로드
+        // x-amz-acl: presigned URL 생성 시 ACL이 포함되어 있으면 필수
         const uploadResponse = await fetch(uploadUrl, {
             method: 'PUT',
             body: file,
-            headers: { 'Content-Type': file.type }
+            headers: {
+                'Content-Type': file.type,
+                'x-amz-acl': 'public-read'
+            }
         });
 
         if (!uploadResponse.ok) {
