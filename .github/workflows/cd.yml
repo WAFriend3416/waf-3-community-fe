@@ -75,6 +75,9 @@ jobs:
             export IMAGE_NAME=community-fe
             export IMAGE_TAG=${{ needs.build.outputs.image_tag }}
 
+            # API_PREFIX: Nginx가 경로 기반 라우팅 처리 (prefix 불필요)
+            export API_PREFIX=""
+
             cd /home/ubuntu/app
 
             # 기존 컨테이너 정리

@@ -394,8 +394,16 @@ async function uploadImage(file) {
         );
 
         if (!presignedResponse.ok) {
-            const errorData = await presignedResponse.json();
-            throw new Error(errorData.message || 'IMAGE-004');
+            // 404 또는 CORS 에러 시 JSON 파싱 실패 가능
+            let errorMessage = 'IMAGE-004';
+            try {
+                const errorData = await presignedResponse.json();
+                errorMessage = errorData.message || 'IMAGE-004';
+            } catch (parseError) {
+                console.error('Failed to parse presigned URL error response:', parseError);
+                errorMessage = presignedResponse.status === 404 ? 'IMAGE-001' : 'IMAGE-004';
+            }
+            throw new Error(errorMessage);
         }
 
         const presignedData = await presignedResponse.json();
