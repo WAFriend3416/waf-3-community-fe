@@ -6,8 +6,9 @@ on:
     types: [closed]
 
 env:
-  REGISTRY: ${{ secrets.REGISTRY_URL }}
-  IMAGE_NAME: community-fe
+  REGISTRY: ${{ secrets.REGISTRY_URL_ECR }}
+  IMAGE_NAME: ktb-personal-fe
+  AWS_REGION: ap-northeast-2
 
 jobs:
   test:
@@ -39,6 +40,16 @@ jobs:
       image_tag: ${{ steps.tag.outputs.TAG }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
       - uses: docker/setup-buildx-action@v3
       - id: tag
         run: echo "TAG=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
@@ -70,13 +81,17 @@ jobs:
             set -e
             command -v docker >/dev/null 2>&1 || exit 1
             docker compose version >/dev/null 2>&1 || exit 1
+            command -v aws >/dev/null 2>&1 || exit 1
 
-            export REGISTRY=${{ secrets.REGISTRY_URL }}
-            export IMAGE_NAME=community-fe
+            AWS_REGION="ap-northeast-2"
+            get_param() { aws ssm get-parameter --name "$1" --with-decryption --query 'Parameter.Value' --output text --region "$AWS_REGION"; }
+
+            # SSM에서 환경 변수 로드
+            export BACKEND_URL=$(get_param "/community/BACKEND_URL")
+            export API_PREFIX=$(get_param "/community/API_PREFIX")
+            export REGISTRY=${{ secrets.REGISTRY_URL_ECR }}
+            export IMAGE_NAME=ktb-personal-fe
             export IMAGE_TAG=${{ needs.build.outputs.image_tag }}
-
-            # API_PREFIX: Nginx가 경로 기반 라우팅 처리 (prefix 불필요)
-            export API_PREFIX=""
 
             cd /home/ubuntu/app
 
@@ -91,7 +106,7 @@ jobs:
 
             echo "헬스체크 중..."
             HEALTH_OK=false
-            for i in $(seq 1 60); do
+            for i in $(seq 1 180); do
               if curl -sf http://localhost:3000 >/dev/null 2>&1; then
                 echo "헬스체크 성공! (${i}초)"
                 HEALTH_OK=true

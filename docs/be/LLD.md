@@ -384,6 +384,7 @@ public class RateLimitAspect {
 - PostController.createPost (30회/분) - 게시글 spam 방지
 - CommentController.createComment (50회/분) - 댓글 spam 방지 (더 빈번)
 - ImageController.uploadImage (10회/분) - 파일 업로드 부하
+- ImageController.getPresignedUrl (10회/분) - Presigned URL 발급 남용 방지
 
 **Tier 3 (제한 없음 또는 200회/분) - 약한 제한/해제:**
 - 모든 GET 조회 API - 제한 없음 (페이지네이션으로 제어)
@@ -583,16 +584,16 @@ if (!comment.getUser().getUserId().equals(userId)) {
 
 ### 7.5 이미지 업로드 전략
 
-**4가지 패턴 비교:**
+**5가지 패턴 비교:**
 
-| 항목 | Multipart 직접 업로드 | 2단계 업로드 | 이미지 제거 | Lambda 메타데이터 |
-|------|---------------------|-------------|-----------|-----------------|
-| **사용처** | 회원가입, 프로필 수정 | 게시글 작성/수정 | 프로필 수정 | Lambda 이미지 처리 |
-| **요청 횟수** | 1회 (multipart/form-data) | 2회 (POST /images → POST /posts) | 1회 (removeImage: true) | 2회 (Lambda → POST /images/metadata) |
-| **트랜잭션** | 원자적 (이미지 포함) | 독립적 (이미지 선행) | 원자적 (TTL 복원) | 독립적 (S3 선행) |
-| **UX 장점** | 간편함, 한 번에 완료 | 미리보기, 임시 저장 지원 | 명시적 제거 의도 | 서버 부하 분산 |
-| **핵심 메서드** | AuthService.signup() | PostService.createPost() | UserService.updateProfile() | ImageService.registerImageMetadata() |
-| **엔드포인트** | POST /users/signup | POST /images | PATCH /users/{id} | POST /images/metadata |
+| 항목 | Multipart 직접 업로드 | 2단계 업로드 | Presigned URL | 이미지 제거 | Lambda 메타데이터 |
+|------|---------------------|-------------|--------------|-----------|-----------------|
+| **사용처** | 회원가입, 프로필 수정 | 게시글 작성/수정 | 클라이언트 직접 업로드 | 프로필 수정 | Lambda 이미지 처리 |
+| **요청 횟수** | 1회 (multipart/form-data) | 2회 (POST /images → POST /posts) | 2회 (GET presigned-url → PUT S3) | 1회 (removeImage: true) | 2회 (Lambda → POST /images/metadata) |
+| **트랜잭션** | 원자적 (이미지 포함) | 독립적 (이미지 선행) | 독립적 (이미지 선행) | 원자적 (TTL 복원) | 독립적 (S3 선행) |
+| **UX 장점** | 간편함, 한 번에 완료 | 미리보기, 임시 저장 지원 | 서버 부하 감소, 대용량 지원 | 명시적 제거 의도 | 서버 부하 분산 |
+| **핵심 메서드** | AuthService.signup() | PostService.createPost() | ImageService.generatePresignedUrl() | UserService.updateProfile() | ImageService.registerImageMetadata() |
+| **엔드포인트** | POST /users/signup | POST /images | GET /images/presigned-url | PATCH /users/{id} | POST /images/metadata |
 
 **핵심 구현 패턴:**
 
@@ -704,10 +705,88 @@ public UserResponse updateProfile(Long userId, Long authenticatedUserId,
         }
     }
     // Case 3: 이미지 유지 (둘 다 없음)
-    
+
     return UserResponse.from(user);
 }
 ```
+
+**패턴 4 - Presigned URL (ImageService):**
+```java
+@Transactional
+public PresignedUrlResponse generatePresignedUrl(String filename, String contentType) {
+    // 1. 확장자 검증 (.jpg, .jpeg, .png, .gif)
+    String extension = getExtension(filename);
+    validateImageExtension(extension);
+
+    // 2. S3 Key 생성 (images/yyyy/MM/dd/{UUID}.ext)
+    String s3Key = s3KeyGenerator.generate(extension);
+
+    // 3. Content-Type 결정 (파라미터 또는 확장자 기반 추론)
+    String resolvedContentType = contentType != null
+        ? contentType
+        : getContentTypeFromExtension(extension);
+
+    // 4. Presigned URL 생성 (15분 유효)
+    PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+        .bucket(bucketName)
+        .key(s3Key)
+        .contentType(resolvedContentType)
+        .build();
+
+    PutObjectPresignRequest presignRequest = PutObjectPresignRequest.builder()
+        .signatureDuration(Duration.ofMinutes(15))
+        .putObjectRequest(putObjectRequest)
+        .build();
+
+    PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
+    String uploadUrl = presignedRequest.url().toString();
+
+    // 5. DB에 Image 레코드 사전 등록 (TTL 1시간)
+    Image image = Image.builder()
+        .imageUrl(getPublicUrl(s3Key))
+        .s3Key(s3Key)
+        .expiresAt(LocalDateTime.now().plusHours(1))
+        .build();
+    Image savedImage = imageRepository.save(image);
+
+    // 6. PresignedUrlResponse 반환
+    return PresignedUrlResponse.builder()
+        .imageId(savedImage.getImageId())
+        .uploadUrl(uploadUrl)
+        .s3Key(s3Key)
+        .expiresAt(presignedRequest.expiration())
+        .build();
+}
+```
+
+**Presigned URL 클라이언트 사용법:**
+```javascript
+// 1. Presigned URL 발급
+const { imageId, uploadUrl } = await fetch('/images/presigned-url?filename=photo.jpg')
+    .then(res => res.json()).then(r => r.data);
+
+// 2. S3 직접 업로드 (PUT)
+await fetch(uploadUrl, {
+    method: 'PUT',
+    body: file,  // File 객체
+    headers: { 'Content-Type': file.type }
+});
+
+// 3. 회원가입/게시글 작성 시 imageId 사용
+await fetch('/posts', {
+    method: 'POST',
+    body: JSON.stringify({ title, content, imageId })
+});
+```
+
+**Presigned URL vs Multipart 비교:**
+| 항목 | Presigned URL | Multipart (기존) |
+|------|--------------|-----------------|
+| **서버 부하** | 낮음 (S3 직접) | 높음 (서버 경유) |
+| **대용량 파일** | 적합 (5GB까지) | 부적합 (서버 메모리) |
+| **Progress** | 클라이언트 직접 추적 | XMLHttpRequest 필요 |
+| **보안** | URL 만료 (15분) | 서버 검증 |
+| **복잡도** | 2회 요청 | 1회 요청 |
 
 **TTL 패턴 (공통 핵심):**
 - **업로드 시**: ImageService가 `expires_at = NOW() + 1시간` 설정
@@ -723,14 +802,18 @@ public UserResponse updateProfile(Long userId, Long authenticatedUserId,
   - 패턴 1 (새 이미지 교체): 기존 이미지 TTL 1시간 복원 → 고아 처리
   - 패턴 3 (이미지 제거): 기존 이미지 TTL 1시간 복원 → 관계 해제
   - Phase 4 배치가 expires_at < NOW() 조건으로 S3 + DB 삭제
-- **트랜잭션 안전성**: 패턴 1/3은 완전 원자적, 패턴 2는 이미지만 선행 업로드 (S3 파일 고아 가능)
+- **트랜잭션 안전성**: 패턴 1/3은 완전 원자적, 패턴 2/4는 이미지만 선행 업로드 (S3 파일 고아 가능)
+- **Presigned URL 하이브리드**: 기존 Multipart 방식 유지 + Presigned URL 신규 제공
+  - Multipart: 소규모 이미지, 서버 검증 필요 시
+  - Presigned URL: 대용량 파일, 서버 부하 분산 필요 시
 
-**참조**: 
+**참조**:
 - AuthService.signup() - 패턴 1 전체 구현
 - PostService.createPost() - 패턴 2 전체 구현
 - UserService.updateProfile() - 패턴 3 전체 구현
+- ImageService.generatePresignedUrl() - 패턴 4 전체 구현
 - ImageService.uploadImage() - 공통 검증 로직
-- **@docs/be/API.md Section 2.1, 2.3, 3.3, 4.1**
+- **@docs/be/API.md Section 2.1, 2.3, 3.3, 4.1, 4.3**
 - **@docs/be/DDL.md** (images 테이블)
 
 ---
@@ -1056,3 +1139,4 @@ int decrementLikeCount(@Param("postId") Long postId);
 | 2025-10-22 | 1.9 | Section 7.2, 12.3 clearAutomatically 파라미터 동기화 (true → false, Phase 5 최적화 반영) |
 | 2025-11-03 | 2.0 | Section 7.5 Pattern 3 추가 (이미지 제거, UserService.updateProfile), TTL 복원 전략 문서화 |
 | 2025-12-01 | 2.1 | Section 2.1-2.2 ALB 경로 기반 라우팅 추가, 프로젝트명 DC2로 변경, 문서 손상 복구 |
+| 2025-12-01 | 2.2 | Section 7.5 패턴 4 Presigned URL 추가, 하이브리드 업로드 전략 문서화 |

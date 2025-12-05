@@ -587,6 +587,66 @@ return PostResponse.from(post);
 
 ---
 
+### 4.3 Presigned URL 발급
+**Endpoint:** `GET /images/presigned-url`
+
+**헤더:** Authorization: Bearer {access_token | guest_token}
+
+**Query Parameters:**
+| 파라미터 | 타입 | 필수 | 설명 |
+|---------|------|------|------|
+| filename | String | ✅ | 원본 파일명 (확장자 포함) |
+| content_type | String | ❌ | MIME type (기본: 확장자 기반 추론) |
+
+**제약:**
+- 허용 확장자: .jpg, .jpeg, .png, .gif
+- Presigned URL 유효기간: 15분
+- 이미지 TTL: 1시간 (연결 시 해제)
+
+**응답:**
+- 201: `presigned_url_generated`
+- 400: IMAGE-003 (Invalid file type), COMMON-001 (Filename required)
+- 401/500: [공통 에러 코드](#응답-코드) 참조
+
+**응답 예시:**
+```json
+{
+  "message": "presigned_url_generated",
+  "data": {
+    "imageId": 123,
+    "uploadUrl": "https://bucket.s3.ap-northeast-2.amazonaws.com/images/2025/12/01/uuid.jpg?X-Amz-Algorithm=...",
+    "s3Key": "images/2025/12/01/uuid.jpg",
+    "expiresAt": "2025-12-01T15:30:00"
+  },
+  "timestamp": "2025-12-01T15:15:00"
+}
+```
+
+**클라이언트 사용법:**
+```javascript
+// 1. Presigned URL 발급
+const { imageId, uploadUrl } = await fetch('/images/presigned-url?filename=profile.jpg', {
+  headers: { Authorization: `Bearer ${token}` }
+}).then(r => r.json()).then(d => d.data);
+
+// 2. S3 직접 업로드 (PUT)
+await fetch(uploadUrl, {
+  method: 'PUT',
+  body: imageFile,
+  headers: { 'Content-Type': 'image/jpeg' }
+});
+
+// 3. 회원가입/게시글 작성 시 imageId 사용
+await fetch('/users/signup', {
+  method: 'POST',
+  body: JSON.stringify({ email, password, nickname, imageId })
+});
+```
+
+**Rate Limit:** 10회/분 (Tier 2)
+
+---
+
 ## 5. 댓글 (Comments)
 
 **댓글 객체:** `{ commentId, content, createdAt, updatedAt, author: { userId, nickname, profileImage } }`
