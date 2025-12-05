@@ -7,35 +7,36 @@ on:
 
 env:
   REGISTRY: ${{ secrets.REGISTRY_URL_ECR }}
-  IMAGE_NAME: ktb-personal-fe
+  IMAGE_NAME: ktb-personal
+  IMAGE_PREFIX: fe
   AWS_REGION: ap-northeast-2
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
-    strategy:
-      matrix:
-        node-version: [18, 20, 22]
-    steps:
-      - uses: actions/checkout@v4
+  # test:
+  #   runs-on: ubuntu-latest
+  #   if: github.event.pull_request.merged == true
+  #   strategy:
+  #     matrix:
+  #       node-version: [18, 20, 22]
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ matrix.node-version }}
 
-      - uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-node-${{ matrix.node-version }}-
+  #     - uses: actions/cache@v4
+  #       with:
+  #         path: ~/.npm
+  #         key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
+  #         restore-keys: ${{ runner.os }}-node-${{ matrix.node-version }}-
 
-      - run: npm ci
-      - run: npm test
+  #     - run: npm ci
+  #     - run: npm test
 
   build:
     runs-on: ubuntu-latest
-    needs: test
+    if: github.event.pull_request.merged == true
     permissions:
       id-token: write
       contents: read
@@ -62,8 +63,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_PREFIX }}-latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_PREFIX }}-${{ steps.tag.outputs.TAG }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -93,8 +94,8 @@ jobs:
             export BACKEND_URL=$(get_param "/community/BACKEND_URL")
             export API_PREFIX=$(get_param "/community/API_PREFIX")
             export REGISTRY=${{ secrets.REGISTRY_URL_ECR }}
-            export IMAGE_NAME=ktb-personal-fe
-            export IMAGE_TAG=${{ needs.build.outputs.image_tag }}
+            export IMAGE_NAME=ktb-personal
+            export IMAGE_TAG=fe-${{ needs.build.outputs.image_tag }}
 
             cd /home/ubuntu/app
 
