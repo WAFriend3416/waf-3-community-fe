@@ -1,0 +1,84 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(
+            name: 'IMAGE_DATE_TAG',
+            defaultValue: '',
+            description: 'GA에서 빌드한 날짜 태그 (예: 20251208-153045). 최종 태그는 fe-<이 값>으로 사용'
+        )
+    }
+
+    environment {
+        AWS_REGION      = 'ap-northeast-2'
+        ACCOUNT_ID      = '557690602093'
+        REGISTRY        = "${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        IMAGE_NAME      = 'ktb-personal'
+
+        // 실제 프론트엔드 Target Group ARN 으로 교체
+        FRONTEND_TG_ARN = 'arn:aws:elasticloadbalancing:ap-northeast-2:557690602093:targetgroup/ktb-personal-project-fe/a15b80c5eb204235'
+    }
+
+    stages {
+        stage('Resolve Frontend Targets') {
+            steps {
+                script {
+                    // 1) 타겟그룹 → 인스턴스 ID
+                    def instanceIds = sh(
+                        script: """
+                          aws elbv2 describe-target-health \\
+                            --region ${AWS_REGION} \\
+                            --target-group-arn ${FRONTEND_TG_ARN} \\
+                            --query 'TargetHealthDescriptions[].Target.Id' \\
+                            --output text
+                        """,
+                        returnStdout: true
+                    ).trim()
+
+                    if (!instanceIds) {
+                        error "프론트엔드 타겟그룹에 등록된 인스턴스가 없습니다."
+                    }
+
+                    // 2) 인스턴스 ID → 프라이빗 IP
+                    def frontendIps = sh(
+                        script: """
+                          aws ec2 describe-instances \\
+                            --region ${AWS_REGION} \\
+                            --instance-ids ${instanceIds} \\
+                            --query 'Reservations[].Instances[].PrivateIpAddress' \\
+                            --output text
+                        """,
+                        returnStdout: true
+                    ).trim().split()
+
+                    echo "프론트엔드 대상 IP들: ${frontendIps}"
+                    env.FRONTEND_IPS = frontendIps.join(' ')
+                }
+            }
+        }
+
+        stage('Deploy Frontend') {
+            steps {
+                sshagent(credentials: ['ktb-personal-project-ec2-ssh-key']) { // Jenkins에 등록된 SSH 크리덴셜 ID
+                    script {
+                        def ips = env.FRONTEND_IPS?.trim() ? env.FRONTEND_IPS.split(' ') : []
+                        if (ips.isEmpty()) {
+                            error "프론트엔드 IP가 없습니다."
+                        }
+
+                        def finalTag = "fe-${params.IMAGE_DATE_TAG}".trim()
+                        echo "프론트엔드 배포 태그: ${finalTag}"
+
+                        ips.each { ip ->
+                            echo "프론트엔드 배포 대상: ${ip}"
+                            sh """
+                              ssh -o StrictHostKeyChecking=no ubuntu@${ip} \\
+                                '/mnt/efs/deploy/frontend/deploy-frontend.sh ${REGISTRY} ${IMAGE_NAME} ${finalTag}'
+                            """
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -5,8 +5,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - BACKEND_URL=
-      - API_PREFIX=${API_PREFIX:-}
+      - BACKEND_URL=${BACKEND_URL}
+      - API_PREFIX=${API_PREFIX}
     restart: unless-stopped
     mem_limit: 512m
     healthcheck:
