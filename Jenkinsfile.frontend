@@ -59,7 +59,7 @@ pipeline {
 
         stage('Deploy Frontend') {
             steps {
-                sshagent(credentials: ['frontend-ssh-key']) { // Jenkins 크리덴셜 ID
+                sshagent(credentials: ['ktb-personal-project-ec2-ssh-key']) { // Jenkins 크리덴셜 ID
                     script {
                         // 1) env.FRONTEND_IPS에서 문자열 꺼내기 (예: "10.0.131.237 10.0.135.107")
                         def ipsText = env.FRONTEND_IPS?.trim()
