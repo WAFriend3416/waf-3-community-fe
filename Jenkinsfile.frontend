@@ -59,20 +59,28 @@ pipeline {
 
         stage('Deploy Frontend') {
             steps {
-                sshagent(credentials: ['ktb-personal-project-ec2-ssh-key']) { // Jenkins에 등록된 SSH 크리덴셜 ID
+                sshagent(credentials: ['frontend-ssh-key']) { // Jenkins 크리덴셜 ID
                     script {
-                        def ips = env.FRONTEND_IPS?.trim() ? env.FRONTEND_IPS.split(' ') : []
-                        if (ips.isEmpty()) {
+                        // 1) env.FRONTEND_IPS에서 문자열 꺼내기 (예: "10.0.131.237 10.0.135.107")
+                        def ipsText = env.FRONTEND_IPS?.trim()
+                        if (!ipsText) {
                             error "프론트엔드 IP가 없습니다."
                         }
 
+                        // 2) 문자열을 공백 기준으로 잘라서 List로 변환
+                        //    split()은 String[](배열)이어서 as List로 캐스팅
+                        def ips = (ipsText.split(' ') as List<String>)
+                        echo "프론트엔드 대상 IP들: ${ips}"
+
+                        // 3) 최종 이미지 태그
                         def finalTag = "fe-${params.IMAGE_DATE_TAG}".trim()
                         echo "프론트엔드 배포 태그: ${finalTag}"
 
+                        // 4) 각 IP에 배포 스크립트 실행
                         ips.each { ip ->
                             echo "프론트엔드 배포 대상: ${ip}"
                             sh """
-                              ssh -o StrictHostKeyChecking=no ubuntu@${ip} \\
+                            ssh -o StrictHostKeyChecking=no ubuntu@${ip} \\
                                 '/mnt/efs/deploy/frontend/deploy-frontend.sh ${REGISTRY} ${IMAGE_NAME} ${finalTag}'
                             """
                         }
