@@ -77,7 +77,9 @@ jobs:
             export BACKEND_URL=$(get_param "/community/pp/BACKEND_URL")
             export API_PREFIX=$(get_param "/community/pp/API_PREFIX")
 
-            # Image tag
+            # Registry and Image configuration
+            export REGISTRY="registry.ktb-waf.cloud"
+            export IMAGE_NAME="community-frontend"
             export IMAGE_TAG="${IMAGE_TAG:-latest}"
 
             # Validate required variables
