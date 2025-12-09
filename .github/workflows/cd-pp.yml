@@ -87,7 +87,7 @@ jobs:
             fi
 
             # Navigate to deployment directory
-            cd /opt/community || { echo "Deployment directory not found"; exit 1; }
+            cd /home/ubuntu/app/ || { echo "Deployment directory not found"; exit 1; }
 
             # Pull and deploy
             echo "=== Pulling new images ==="
