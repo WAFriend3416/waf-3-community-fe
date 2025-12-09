@@ -325,8 +325,8 @@
     state.selectedFile = null;
     state.removeExistingImage = true;
 
-    // 기본 이미지로 변경
-    elements.profileImage.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';
+    // 사용자별 고유 플레이스홀더로 변경
+    elements.profileImage.src = getProfilePlaceholder(state.userId);
     elements.profileImage.style.display = 'block';
     if (elements.removeImageButton) {
       elements.removeImageButton.style.display = 'none';

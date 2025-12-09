@@ -35,8 +35,8 @@ async function initAuthHeader() {
         const profileImage = document.querySelector('[data-profile="image"]');
         const profileNickname = document.querySelector('[data-profile="nickname"]');
 
-        if (profileImage && user.profileImage) {
-            profileImage.src = user.profileImage;
+        if (profileImage) {
+            profileImage.src = user.profileImage || getProfilePlaceholder(userId);
         }
         if (profileNickname && user.nickname) {
             profileNickname.textContent = user.nickname;
