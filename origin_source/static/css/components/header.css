@@ -318,21 +318,30 @@
   text-decoration: none;
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
 }
 
 .header__auth-link:hover {
   color: var(--color-text-primary);
   background-color: var(--color-bg-tertiary);
+  border-color: var(--color-orange-border);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .header__auth-link--primary {
   background-color: var(--color-brand-primary);
-  color: var(--color-text-primary);
+  color: #FFFFFF;
+  border: 2px solid var(--color-brand-primary);
 }
 
 .header__auth-link--primary:hover {
-  background-color: var(--color-brand-primary-hover);
+  background-color: transparent;
+  color: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 153, 0, 0.3);
 }
 
 /* ========================================
