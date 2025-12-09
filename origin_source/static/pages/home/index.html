@@ -171,9 +171,19 @@
         <p class="benefits__subtitle">어떻게 만들었나요?</p>
         <div class="benefits__grid">
           <div class="benefit-item">
+            <div class="benefit-item__emoji">☁️</div>
+            <h3 class="benefit-item__title">Cloud Infrastructure</h3>
+            <p class="benefit-item__description">AWS 기반 클라우드 아키텍처 설계. ALB 경로 라우팅, Private Subnet으로 서버 직접 접근 차단, <br/> ECR 컨테이너 레지스트리, SSM 환경 변수 중앙 관리</p>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-item__emoji">🚀</div>
+            <h3 class="benefit-item__title">CI/CD Pipeline</h3>
+            <p class="benefit-item__description">GitHub Actions -> Jenkins 웹훅 자동 배포 트리거. Docker 빌드 및 ECR 푸시,<br/>EC2 무중단 배포 파이프라인 구축</p>
+          </div>
+          <div class="benefit-item">
             <div class="benefit-item__emoji">⚙️</div>
-            <h3 class="benefit-item__title">Backend</h3>
-            <p class="benefit-item__description">Spring Boot 3.5 + Java 24로 REST API 구현. JWT 인증, MySQL 데이터베이스, AWS S3 이미지 저장소 사용</p>
+            <h3 class="benefit-item__title">Backend API</h3>
+            <p class="benefit-item__description">Spring Boot 3.5 + Java 21 LTS로 REST API 구현. JWT 인증, MySQL 데이터베이스, <br/> S3 이미지 저장소 연동</p>
           </div>
           <div class="benefit-item">
             <div class="benefit-item__emoji">🎨</div>
@@ -183,12 +193,7 @@
           <div class="benefit-item">
             <div class="benefit-item__emoji">🔐</div>
             <h3 class="benefit-item__title">Security</h3>
-            <p class="benefit-item__description">HttpOnly Cookie로 XSS 방지, CSRF 토큰, Rate Limiting으로 안전한 인증 시스템 구축</p>
-          </div>
-          <div class="benefit-item">
-            <div class="benefit-item__emoji">⚡</div>
-            <h3 class="benefit-item__title">Performance</h3>
-            <p class="benefit-item__description">Cursor 기반 무한 스크롤, N+1 쿼리 최적화, 원자적 UPDATE로 동시성 제어 구현</p>
+            <p class="benefit-item__description">HttpOnly Cookie로 XSS 방지, CSRF 토큰, <br/>Rate Limiting으로 안전한 인증 시스템 구축</p>
           </div>
         </div>
       </div>

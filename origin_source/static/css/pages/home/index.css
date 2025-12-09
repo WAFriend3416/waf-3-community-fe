@@ -199,8 +199,17 @@
 
 .benefits__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
+}
+
+/* 5번째 항목을 중앙에 배치 (3-2 레이아웃) */
+.benefit-item:nth-child(4) {
+  grid-column: 1 / 2;
+}
+
+.benefit-item:nth-child(5) {
+  grid-column: 2 / 3;
 }
 
 /* Benefit Item */
@@ -298,6 +307,19 @@
    Responsive
    =================================== */
 
+/* 태블릿 (2열 그리드) */
+@media (max-width: 1024px) {
+  .benefits__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .benefit-item:nth-child(4),
+  .benefit-item:nth-child(5) {
+    grid-column: auto;
+  }
+}
+
+/* 모바일 (1열 그리드) */
 @media (max-width: 768px) {
   .hero__title {
     font-size: 40px;
@@ -325,5 +347,14 @@
 
   .cta__container {
     padding: 40px 24px;
+  }
+
+  .benefits__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .benefit-item:nth-child(4),
+  .benefit-item:nth-child(5) {
+    grid-column: auto;
   }
 }
