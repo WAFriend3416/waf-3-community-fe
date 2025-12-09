@@ -2,6 +2,7 @@ name: CD-PP (Direct Deploy)
 
 on:
   pull_request:
+    # pp 브랜치로 머지된 경우에만 동작
     branches: [pp]
     types: [closed]
     paths-ignore:
