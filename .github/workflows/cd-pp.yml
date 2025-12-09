@@ -93,13 +93,13 @@ jobs:
 
             # Pull and deploy
             echo "=== Pulling new images ==="
-            sudo docker compose pull
+            sudo -E docker compose pull
 
             echo "=== Stopping old containers ==="
-            sudo docker compose down --remove-orphans || true
+            sudo -E docker compose down --remove-orphans || true
 
             echo "=== Starting new containers ==="
-            sudo docker compose up -d
+            sudo -E docker compose up -d
 
             # Health check
             echo "=== Running health check ==="
