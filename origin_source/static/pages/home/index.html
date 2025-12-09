@@ -3,27 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DC2 - KTB 개발자 커뮤니티</title>
+  <title>DC2 - 개발자 커뮤니티</title>
 
   <!-- Runtime Config -->
   <script src="/config.js"></script>
 
   <!-- SEO Meta Tags -->
   <meta name="description" content="개발자들이 지식을 공유하고 함께 성장하는 커뮤니티 플랫폼. 기술 블로그, 질문 답변, 스터디 모집, 코드 리뷰를 통해 더 나은 개발자가 되어보세요.">
-  <meta name="keywords" content="개발자 커뮤니티, 기술 블로그, 프로그래밍, 코딩, 스터디, 프로젝트, KTB, 개발자 포럼">
-  <meta name="author" content="KTB Community">
+  <meta name="keywords" content="개발자 커뮤니티, 기술 블로그, 프로그래밍, 코딩, 스터디, 프로젝트, 개발자 포럼">
+  <meta name="author" content="Developer Community">
 
   <!-- Open Graph Meta Tags (SNS 공유) -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DC2">
-  <meta property="og:title" content="DC2 - KTB 개발자 커뮤니티">
+  <meta property="og:title" content="DC2 - 개발자 커뮤니티">
   <meta property="og:description" content="개발자들이 지식을 공유하고 함께 성장하는 커뮤니티 플랫폼">
   <meta property="og:url" content="http://localhost:3000/">
   <meta property="og:image" content="http://localhost:3000/images/og-image.png">
 
   <!-- Twitter Card Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="DC2 - KTB 개발자 커뮤니티">
+  <meta name="twitter:title" content="DC2 - 개발자 커뮤니티">
   <meta name="twitter:description" content="개발자들이 지식을 공유하고 함께 성장하는 커뮤니티 플랫폼">
   <meta name="twitter:image" content="http://localhost:3000/images/og-image.png">
 
@@ -108,7 +108,7 @@
     <!-- Hero Section -->
     <section class="hero">
       <div class="hero__container">
-        <div class="hero__badge">🚀 KTB Community</div>
+        <div class="hero__badge">🚀 개발자 커뮤니티</div>
         <h1 class="hero__title">개발자들의<br><span class="hero__highlight">성장 플랫폼</span></h1>
         <p class="hero__subtitle">지식을 공유하고, 함께 성장하며, 더 나은 개발자가 되어가는 공간</p>
         <div class="hero__actions">
@@ -171,9 +171,19 @@
         <p class="benefits__subtitle">어떻게 만들었나요?</p>
         <div class="benefits__grid">
           <div class="benefit-item">
+            <div class="benefit-item__emoji">☁️</div>
+            <h3 class="benefit-item__title">Cloud Infrastructure</h3>
+            <p class="benefit-item__description">AWS 기반 클라우드 아키텍처 설계. ALB 경로 라우팅, Private Subnet으로 서버 직접 접근 차단, <br/> ECR 컨테이너 레지스트리, SSM 환경 변수 중앙 관리</p>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-item__emoji">🚀</div>
+            <h3 class="benefit-item__title">CI/CD Pipeline</h3>
+            <p class="benefit-item__description">GitHub Actions -> Jenkins 웹훅 자동 배포 트리거. Docker 빌드 및 ECR 푸시,<br/>EC2 무중단 배포 파이프라인 구축</p>
+          </div>
+          <div class="benefit-item">
             <div class="benefit-item__emoji">⚙️</div>
-            <h3 class="benefit-item__title">Backend</h3>
-            <p class="benefit-item__description">Spring Boot 3.5 + Java 24로 REST API 구현. JWT 인증, MySQL 데이터베이스, AWS S3 이미지 저장소 사용</p>
+            <h3 class="benefit-item__title">Backend API</h3>
+            <p class="benefit-item__description">Spring Boot 3.5 + Java 21 LTS로 REST API 구현. JWT 인증, MySQL 데이터베이스, <br/> S3 이미지 저장소 연동</p>
           </div>
           <div class="benefit-item">
             <div class="benefit-item__emoji">🎨</div>
@@ -183,12 +193,7 @@
           <div class="benefit-item">
             <div class="benefit-item__emoji">🔐</div>
             <h3 class="benefit-item__title">Security</h3>
-            <p class="benefit-item__description">HttpOnly Cookie로 XSS 방지, CSRF 토큰, Rate Limiting으로 안전한 인증 시스템 구축</p>
-          </div>
-          <div class="benefit-item">
-            <div class="benefit-item__emoji">⚡</div>
-            <h3 class="benefit-item__title">Performance</h3>
-            <p class="benefit-item__description">Cursor 기반 무한 스크롤, N+1 쿼리 최적화, 원자적 UPDATE로 동시성 제어 구현</p>
+            <p class="benefit-item__description">HttpOnly Cookie로 XSS 방지, CSRF 토큰, <br/>Rate Limiting으로 안전한 인증 시스템 구축</p>
           </div>
         </div>
       </div>

@@ -7,9 +7,18 @@
   /* ===== Colors ===== */
 
   /* Primary Colors */
-  --color-brand-primary: #3B82F6;
-  --color-brand-primary-hover: #2563EB;
-  --color-brand-primary-active: #1D4ED8;
+  --color-brand-primary: #FF9900;
+  --color-brand-primary-hover: #FF8C00;
+  --color-brand-primary-active: #FF7F00;
+
+  /* Orange Palette - 용도별 색상 구분 (다크모드) */
+  --color-orange-button: #FF9900;           /* 버튼 - 가장 선명 */
+  --color-orange-link: #FFA726;             /* 링크 - 밝고 부드러움 */
+  --color-orange-icon: #FB8C00;             /* 아이콘 - 중간 톤 */
+  --color-orange-border: #F57C00;           /* 테두리/구분선 - 진함 */
+  --color-orange-text: #FFB74D;             /* 강조 텍스트 - 연함 */
+  --color-orange-bg-subtle: rgba(255, 153, 0, 0.1);   /* 배경 틴트 - 은은함 */
+  --color-orange-bg-medium: rgba(255, 153, 0, 0.15);  /* 배경 - 중간 */
 
   /* Background Colors */
   --color-bg-primary: #0A0A0A;
@@ -25,14 +34,14 @@
 
   /* Border Colors */
   --color-border-default: #2D2D2D;
-  --color-border-focus: #3B82F6;
+  --color-border-focus: #FF9900;
   --color-border-error: #EF4444;
 
   /* Semantic Colors */
   --color-success: #10B981;
   --color-error: #EF4444;
   --color-warning: #F59E0B;
-  --color-info: #3B82F6;
+  --color-info: #FF9900;
 
   /* Special Colors */
   --color-validation-pass: #7F6AEE;
@@ -198,31 +207,40 @@
 /* ===== Light Theme ===== */
 [data-theme="light"] {
   /* Primary Colors - More vibrant for light mode */
-  --color-brand-primary: #2563EB;
-  --color-brand-primary-hover: #1D4ED8;
-  --color-brand-primary-active: #1E40AF;
+  --color-brand-primary: #EC7211;
+  --color-brand-primary-hover: #D86613;
+  --color-brand-primary-active: #C45A14;
+
+  /* Orange Palette - 용도별 색상 구분 (라이트모드) */
+  --color-orange-button: #EC7211;           /* 버튼 - 중간 톤 */
+  --color-orange-link: #F57C00;             /* 링크 - 약간 진함 */
+  --color-orange-icon: #E65100;             /* 아이콘 - 진한 톤 */
+  --color-orange-border: #D84315;           /* 테두리/구분선 - 매우 진함 */
+  --color-orange-text: #BF360C;             /* 강조 텍스트 - 가장 진함 (대비) */
+  --color-orange-bg-subtle: rgba(236, 114, 17, 0.06);   /* 배경 틴트 - 은은함 */
+  --color-orange-bg-medium: rgba(236, 114, 17, 0.12);  /* 배경 - 중간 */
 
   /* Background Colors */
-  --color-bg-primary: #FFFFFF;
-  --color-bg-secondary: #F8FAFC;
+  --color-bg-primary: #F8F9FA;
+  --color-bg-secondary: #FFFFFF;
   --color-bg-tertiary: #F1F5F9;
   --color-bg-elevated: #FFFFFF;
 
   /* Text Colors */
-  --color-text-primary: #0F172A;
+  --color-text-primary: #1E293B;
   --color-text-secondary: #475569;
-  --color-text-tertiary: #94A3B8;
-  --color-text-disabled: #CBD5E1;
+  --color-text-tertiary: #64748B;
+  --color-text-disabled: #94A3B8;
 
   /* Border Colors */
-  --color-border-default: #E2E8F0;
-  --color-border-focus: #2563EB;
+  --color-border-default: #D1D5DB;
+  --color-border-focus: #EC7211;
 
   /* Semantic Colors - More saturated */
   --color-success: #059669;
   --color-error: #DC2626;
   --color-warning: #D97706;
-  --color-info: #2563EB;
+  --color-info: #EC7211;
 
   /* Card */
   --card-bg: var(--color-bg-primary);

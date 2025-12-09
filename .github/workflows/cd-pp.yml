@@ -1,0 +1,125 @@
+name: CD-PP (Direct Deploy)
+
+on:
+  pull_request:
+    branches: [pp]
+    types: [closed]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'README.md'
+
+env:
+  REGISTRY: registry.ktb-waf.cloud
+  IMAGE_NAME: community-frontend
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    outputs:
+      image_tag: ${{ steps.tag.outputs.TAG }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate Image Tag
+        id: tag
+        run: echo "TAG=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.TAG }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment: pp
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'ENDSSH'
+            set -e
+
+            # Prerequisites check
+            echo "=== Checking prerequisites ==="
+            command -v docker >/dev/null 2>&1 || { echo "Docker not found"; exit 1; }
+            sudo docker compose version >/dev/null 2>&1 || { echo "Docker Compose not found"; exit 1; }
+            command -v aws >/dev/null 2>&1 || { echo "AWS CLI not found"; exit 1; }
+
+            # Load environment variables from SSM
+            echo "=== Loading environment variables from SSM ==="
+            AWS_REGION="ap-northeast-2"
+            get_param() {
+              aws ssm get-parameter --name "$1" --with-decryption --query 'Parameter.Value' --output text --region "$AWS_REGION" 2>/dev/null || echo ""
+            }
+
+            export BACKEND_URL=$(get_param "/community/pp/BACKEND_URL")
+            export API_PREFIX=$(get_param "/community/pp/API_PREFIX")
+
+            # Image tag
+            export IMAGE_TAG="${IMAGE_TAG:-latest}"
+
+            # Validate required variables
+            if [ -z "$BACKEND_URL" ]; then
+              echo "ERROR: Required SSM parameters not found"
+              exit 1
+            fi
+
+            # Navigate to deployment directory
+            cd /opt/community || { echo "Deployment directory not found"; exit 1; }
+
+            # Pull and deploy
+            echo "=== Pulling new images ==="
+            sudo docker compose pull
+
+            echo "=== Stopping old containers ==="
+            sudo docker compose down --remove-orphans || true
+
+            echo "=== Starting new containers ==="
+            sudo docker compose up -d
+
+            # Health check
+            echo "=== Running health check ==="
+            HEALTH_OK=false
+            for i in $(seq 1 180); do
+              if curl -sf http://localhost:3000 >/dev/null 2>&1; then
+                echo "✓ Frontend health check passed (${i}s)"
+                HEALTH_OK=true
+                break
+              fi
+              sleep 1
+            done
+
+            if [ "$HEALTH_OK" = "false" ]; then
+              echo "✗ Health check failed"
+              echo "=== Container logs (last 50 lines) ==="
+              docker compose logs --tail 50
+              exit 1
+            fi
+
+            # Cleanup old images
+            echo "=== Cleaning up old images ==="
+            docker image prune -af --filter "until=24h" || true
+
+            echo "=== Deployment completed successfully ==="
+          ENDSSH

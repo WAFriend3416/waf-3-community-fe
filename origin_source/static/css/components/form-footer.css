@@ -18,13 +18,13 @@
 
 .form-footer__link {
   font-size: var(--font-size-sm);
-  color: var(--color-brand-primary);
+  color: var(--color-orange-link);
   text-decoration: none;
   font-weight: var(--font-weight-medium);
   transition: color var(--transition-base);
 }
 
 .form-footer__link:hover {
-  color: var(--color-brand-primary-hover);
+  color: var(--color-orange-button);
   text-decoration: underline;
 }

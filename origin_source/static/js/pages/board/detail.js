@@ -735,7 +735,7 @@
     // 작성자 정보
     const author = post.author || {};
     if (elements.postAuthorImage) {
-      elements.postAuthorImage.src = author.profileImage || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';
+      elements.postAuthorImage.src = author.profileImage || getProfilePlaceholder(author.userId);
       elements.postAuthorImage.alt = author.nickname || '알 수 없음';
     }
     if (elements.postAuthorName) {
@@ -835,7 +835,7 @@
 
     const author = comment.author || {};
     const authorName = escapeHtml(author.nickname || '알 수 없음');
-    const authorImage = author.profileImage || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';
+    const authorImage = author.profileImage || getProfilePlaceholder(author.userId);
     const formattedDate = formatDate(comment.createdAt);
 
     // 본인 댓글이면 수정/삭제 버튼 표시
@@ -849,7 +849,7 @@
 
     div.innerHTML = `
       <div class="comment-item__header">
-        <img src="${authorImage}" alt="${authorName} 프로필" class="comment-item__avatar" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=default';">
+        <img src="${authorImage}" alt="${authorName} 프로필" class="comment-item__avatar" loading="lazy" onerror="this.src=getProfilePlaceholder(${author.userId});">
         <div class="comment-item__info">
           <div class="comment-item__author">${authorName}</div>
           <div class="comment-item__date">${formattedDate}</div>

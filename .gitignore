@@ -71,7 +71,6 @@ docker-data/
 
 # AI AGENT files
 .claude/
-CLAUDE.md
 .mcp.json
 .amazonq
 

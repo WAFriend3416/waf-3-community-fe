@@ -72,6 +72,18 @@ function formatNumberCompact(num) {
 }
 
 /**
+ * 프로필 플레이스홀더 URL 생성
+ * 사용자별 고유 아바타 (userId를 seed로 사용)
+ *
+ * @param {number|string} userId - 사용자 ID (없으면 default)
+ * @returns {string} DiceBear API URL
+ */
+function getProfilePlaceholder(userId) {
+    const seed = userId || 'default';
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
+}
+
+/**
  * 에러 메시지 표시
  * Toast 알림 시스템 사용
  *

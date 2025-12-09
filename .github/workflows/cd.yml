@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [deploy]
     types: [closed]
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'README.md'
 
 env:
   REGISTRY: ${{ secrets.REGISTRY_URL_ECR }}
@@ -57,7 +61,7 @@ jobs:
           JENKINS_URL: ${{ secrets.JENKINS_URL }}
           JENKINS_USER: ${{ secrets.JENKINS_USER }}
           JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
-          JENKINS_FE_JOB_TOKEN: ${{ secrets.JENKINS_FE_JOB_TOKEN }}
+          #JENKINS_FE_JOB_TOKEN: ${{ secrets.JENKINS_FE_JOB_TOKEN }}
           IMAGE_DATE_TAG: ${{ needs.build.outputs.image_tag }}
         run: |
           echo "Trigger Jenkins frontend deploy with IMAGE_DATE_TAG=${IMAGE_DATE_TAG}"

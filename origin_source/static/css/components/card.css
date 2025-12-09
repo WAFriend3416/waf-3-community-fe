@@ -24,13 +24,13 @@
 }
 
 .card--hoverable:hover {
-  border-color: var(--color-brand-primary);
+  border-color: var(--color-orange-border);
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
 .card--featured {
-  border-color: var(--color-brand-primary);
+  border-color: var(--color-orange-border);
   background-color: var(--color-bg-tertiary);
 }
 
@@ -53,7 +53,7 @@
 }
 
 .post-card:hover {
-  border-color: var(--color-brand-primary);
+  border-color: var(--color-orange-border);
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }

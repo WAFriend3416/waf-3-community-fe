@@ -277,7 +277,7 @@
     // 작성자 정보
     const author = post.author || {};
     const authorName = escapeHtml(author.nickname || '알 수 없음');
-    const authorImage = author.profileImage || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default';
+    const authorImage = author.profileImage || getProfilePlaceholder(author.userId);
 
     // 통계 정보
     const stats = post.stats || { likeCount: 0, commentCount: 0, viewCount: 0 };
@@ -294,7 +294,7 @@
 
     article.innerHTML = `
       <div class="post-card__header">
-        <img src="${authorImage}" alt="작성자 프로필" class="post-card__avatar" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=default';">
+        <img src="${authorImage}" alt="작성자 프로필" class="post-card__avatar" loading="lazy" onerror="this.src=getProfilePlaceholder(${author.userId});">
         <div class="post-card__author">
           <div class="post-card__author-name">${authorName}</div>
           <div class="post-card__date">${formattedDate}</div>
