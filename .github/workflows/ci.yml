@@ -31,8 +31,8 @@ jobs:
           restore-keys: ${{ runner.os }}-node-20-
 
       - run: npm ci
-      - run: npm run lint || true
-      - run: npm run format:check || true
+      - run: npm run lint
+      - run: npm run format:check
 
   test:
     runs-on: ubuntu-latest
