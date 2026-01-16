@@ -4,7 +4,7 @@
  * 참조: @CLAUDE.md Section 4.3, @docs/be/API.md Section 3.3, 4.1
  */
 
-(function(window, document) {
+(function (window, document) {
   'use strict';
 
   // ============================================
@@ -16,7 +16,7 @@
     ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
     LIST_URL: '/board',
     DETAIL_URL: '/board',
-    LOGIN_URL: '/page/login'
+    LOGIN_URL: '/page/login',
   };
 
   // ============================================
@@ -26,7 +26,7 @@
     uploadedImageId: null,
     uploadedImageUrl: null,
     selectedFile: null,
-    isSubmitting: false
+    isSubmitting: false,
   };
 
   // ============================================
@@ -48,7 +48,7 @@
     // Error elements
     titleError: null,
     contentError: null,
-    imageError: null
+    imageError: null,
   };
 
   // ============================================
@@ -56,14 +56,15 @@
   // ============================================
   async function init() {
     cacheElements();
-    cleanupInlineStyles();  // 인라인 스타일 정리
+    cleanupInlineStyles(); // 인라인 스타일 정리
     bindEvents();
-    await initAuthHeader();  // 프로필 로드 (auth-header.js 공통 모듈)
+    await initAuthHeader(); // 프로필 로드 (auth-header.js 공통 모듈)
     enableUnsavedChangesWarning(() => {
-      const hasContent = (elements.titleInput?.value.trim() || '') !== '' ||
-                        (elements.contentTextarea?.value.trim() || '') !== '';
+      const hasContent =
+        (elements.titleInput?.value.trim() || '') !== '' ||
+        (elements.contentTextarea?.value.trim() || '') !== '';
       return hasContent;
-    });  // 브라우저 뒤로가기 처리 (navigation.js 공통 모듈)
+    }); // 브라우저 뒤로가기 처리 (navigation.js 공통 모듈)
   }
 
   function cacheElements() {
@@ -91,10 +92,10 @@
    */
   function cleanupInlineStyles() {
     const errorElements = [elements.titleError, elements.contentError, elements.imageError];
-    errorElements.forEach(el => {
+    errorElements.forEach((el) => {
       if (el) {
-        el.style.display = '';  // 인라인 스타일 제거
-        el.textContent = '';     // 텍스트 초기화
+        el.style.display = ''; // 인라인 스타일 제거
+        el.textContent = ''; // 텍스트 초기화
       }
     });
   }
@@ -165,8 +166,8 @@
       if (state.selectedFile && !state.uploadedImageId) {
         try {
           const imageResult = await uploadImage(state.selectedFile);
-          state.uploadedImageId = imageResult.imageId;      // camelCase 수정
-          state.uploadedImageUrl = imageResult.imageUrl;    // camelCase 수정
+          state.uploadedImageId = imageResult.imageId; // camelCase 수정
+          state.uploadedImageUrl = imageResult.imageUrl; // camelCase 수정
         } catch (error) {
           console.error('Image upload failed:', error);
           const translatedMessage = translateErrorCode(error.message);
@@ -186,16 +187,15 @@
         body: JSON.stringify({
           title,
           content,
-          imageId: state.uploadedImageId || null  // camelCase로 통일
-        })
+          imageId: state.uploadedImageId || null, // camelCase로 통일
+        }),
       });
 
       // 성공 - 토스트 메시지 후 상세 페이지로 이동
-      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
+      disableUnsavedChangesWarning(); // beforeunload 경고 비활성화
       Toast.success('게시글이 작성되었습니다.', '작성 완료', 2000, () => {
         window.location.replace(`${CONFIG.DETAIL_URL}/${post.postId}`);
       });
-
     } catch (error) {
       console.error('Failed to create post:', error);
       const errorMessage = translateErrorCode(error.message) || '게시글 작성에 실패했습니다.';
@@ -231,8 +231,8 @@
       '저장하지 않은 내용이 사라집니다. 나가시겠습니까?'
     );
     if (confirmed) {
-      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
-      window.location.replace(CONFIG.LIST_URL);  // replace()로 history 중복 방지
+      disableUnsavedChangesWarning(); // beforeunload 경고 비활성화
+      window.location.replace(CONFIG.LIST_URL); // replace()로 history 중복 방지
     }
   }
 
@@ -243,8 +243,8 @@
       '저장하지 않은 내용이 사라집니다. 취소하시겠습니까?'
     );
     if (confirmed) {
-      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
-      window.location.replace(CONFIG.LIST_URL);  // replace()로 history 중복 방지
+      disableUnsavedChangesWarning(); // beforeunload 경고 비활성화
+      window.location.replace(CONFIG.LIST_URL); // replace()로 history 중복 방지
     }
   }
 
@@ -280,7 +280,7 @@
 
       elements.contentTextarea.scrollIntoView({
         behavior: 'smooth',
-        block: 'start'
+        block: 'start',
       });
     });
   }
@@ -351,7 +351,7 @@
   function showImagePreview(file) {
     const reader = new FileReader();
 
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       if (elements.previewImage) {
         elements.previewImage.src = e.target.result;
         elements.previewImage.style.display = 'block';
@@ -457,5 +457,4 @@
   } else {
     init();
   }
-
 })(window, document);

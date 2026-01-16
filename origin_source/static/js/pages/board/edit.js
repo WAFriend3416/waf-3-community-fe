@@ -4,7 +4,7 @@
  * 참조: @docs/be/API.md Section 3.4
  */
 
-(function(window, document) {
+(function (window, document) {
   'use strict';
 
   const CONFIG = {
@@ -12,7 +12,7 @@
     MAX_FILE_SIZE: 5 * 1024 * 1024,
     ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
     DETAIL_URL: '/board',
-    LOGIN_URL: '/page/login'
+    LOGIN_URL: '/page/login',
   };
 
   const state = {
@@ -22,12 +22,13 @@
     selectedFile: null,
     removeExistingImage: false,
     isSubmitting: false,
-    hasChanges: false,  // 변경사항 추적
-    initialData: {      // 초기 데이터 저장
+    hasChanges: false, // 변경사항 추적
+    initialData: {
+      // 초기 데이터 저장
       title: '',
       content: '',
-      imageUrl: ''
-    }
+      imageUrl: '',
+    },
   };
 
   const elements = {
@@ -43,7 +44,7 @@
     profileImage: null,
     titleError: null,
     contentError: null,
-    imageError: null
+    imageError: null,
   };
 
   async function init() {
@@ -60,10 +61,10 @@
     }
 
     cacheElements();
-    cleanupInlineStyles();  // 인라인 스타일 정리
+    cleanupInlineStyles(); // 인라인 스타일 정리
     bindEvents();
-    await initAuthHeader();  // 프로필 로드 (auth-header.js 공통 모듈)
-    enableUnsavedChangesWarning(() => state.hasChanges);  // 브라우저 뒤로가기 처리 (navigation.js 공통 모듈)
+    await initAuthHeader(); // 프로필 로드 (auth-header.js 공통 모듈)
+    enableUnsavedChangesWarning(() => state.hasChanges); // 브라우저 뒤로가기 처리 (navigation.js 공통 모듈)
     loadPost();
   }
 
@@ -89,10 +90,10 @@
    */
   function cleanupInlineStyles() {
     const errorElements = [elements.titleError, elements.contentError, elements.imageError];
-    errorElements.forEach(el => {
+    errorElements.forEach((el) => {
       if (el) {
-        el.style.display = '';  // 인라인 스타일 제거
-        el.textContent = '';     // 텍스트 초기화
+        el.style.display = ''; // 인라인 스타일 제거
+        el.textContent = ''; // 텍스트 초기화
       }
     });
   }
@@ -196,7 +197,7 @@
       if (state.selectedFile) {
         try {
           const imageResult = await uploadImage(state.selectedFile);
-          state.uploadedImageId = imageResult.imageId;  // camelCase 수정
+          state.uploadedImageId = imageResult.imageId; // camelCase 수정
         } catch (error) {
           console.error('Image upload failed:', error);
           const translatedMessage = translateErrorCode(error.message);
@@ -211,25 +212,25 @@
       // 게시글 수정 (PATCH)
       const body = {
         title: elements.titleInput.value.trim(),
-        content: elements.contentTextarea.value.trim()
+        content: elements.contentTextarea.value.trim(),
       };
 
       // 이미지 처리 (API.md Section 3.4 스펙 준수)
       if (state.removeExistingImage) {
-        body.removeImage = true;  // 명시적 제거 신호
+        body.removeImage = true; // 명시적 제거 신호
       } else if (state.uploadedImageId) {
         body.imageId = state.uploadedImageId;
       }
 
       await fetchWithAuth(`/posts/${state.postId}`, {
         method: 'PATCH',
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       });
 
       // 성공 - 토스트 메시지 후 상세 페이지로 이동
-      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
+      disableUnsavedChangesWarning(); // beforeunload 경고 비활성화
       Toast.success('게시글이 수정되었습니다.', '수정 완료', 1200, () => {
-        window.location.replace(`${CONFIG.DETAIL_URL}/${state.postId}`);  // replace()로 history 중복 방지
+        window.location.replace(`${CONFIG.DETAIL_URL}/${state.postId}`); // replace()로 history 중복 방지
       });
     } catch (error) {
       console.error('Failed to update post:', error);
@@ -237,7 +238,7 @@
       Toast.error(errorMessage, '오류');
       state.isSubmitting = false;
       elements.submitButton.disabled = false;
-      elements.submitButton.textContent = '수정완료';  // 스피너 제거
+      elements.submitButton.textContent = '수정완료'; // 스피너 제거
     }
   }
 
@@ -254,7 +255,7 @@
     state.removeExistingImage = false;
 
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = (e) => {
       elements.previewImage.src = e.target.result;
       elements.previewImage.style.display = 'block';
       elements.placeholder.style.display = 'none';
@@ -291,9 +292,9 @@
         '저장하지 않은 변경사항이 있습니다. 페이지를 나가시겠습니까?'
       );
       if (!confirmed) return;
-      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
+      disableUnsavedChangesWarning(); // beforeunload 경고 비활성화
     }
-    window.location.replace(`${CONFIG.DETAIL_URL}/${state.postId}`);  // replace()로 history 중복 방지
+    window.location.replace(`${CONFIG.DETAIL_URL}/${state.postId}`); // replace()로 history 중복 방지
   }
 
   async function handleCancel(e) {
@@ -304,21 +305,25 @@
         '저장하지 않은 변경사항이 있습니다. 취소하시겠습니까?'
       );
       if (!confirmed) return;
-      disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
+      disableUnsavedChangesWarning(); // beforeunload 경고 비활성화
     }
-    window.location.replace(`${CONFIG.DETAIL_URL}/${state.postId}`);  // replace()로 history 중복 방지
+    window.location.replace(`${CONFIG.DETAIL_URL}/${state.postId}`); // replace()로 history 중복 방지
   }
 
   function checkForChanges() {
     const currentTitle = elements.titleInput ? elements.titleInput.value : '';
     const currentContent = elements.contentTextarea ? elements.contentTextarea.value : '';
-    const currentImageUrl = elements.previewImage && elements.previewImage.style.display !== 'none'
-      ? elements.previewImage.src : '';
+    const currentImageUrl =
+      elements.previewImage && elements.previewImage.style.display !== 'none'
+        ? elements.previewImage.src
+        : '';
 
     const hasTitleChange = currentTitle !== state.initialData.title;
     const hasContentChange = currentContent !== state.initialData.content;
-    const hasImageChange = state.selectedFile !== null || state.removeExistingImage ||
-                          currentImageUrl !== state.initialData.imageUrl;
+    const hasImageChange =
+      state.selectedFile !== null ||
+      state.removeExistingImage ||
+      currentImageUrl !== state.initialData.imageUrl;
 
     state.hasChanges = hasTitleChange || hasContentChange || hasImageChange;
     updateSubmitButtonState();
@@ -385,5 +390,4 @@
   } else {
     init();
   }
-
 })(window, document);

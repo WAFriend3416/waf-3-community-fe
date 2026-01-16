@@ -12,11 +12,11 @@
  * @returns {string}
  */
 function escapeHtml(str) {
-    if (!str || typeof str !== 'string') return '';
+  if (!str || typeof str !== 'string') return '';
 
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 /**
@@ -27,22 +27,22 @@ function escapeHtml(str) {
  * @returns {string}
  */
 function formatDate(dateString) {
-    if (!dateString) return '';
+  if (!dateString) return '';
 
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = Math.floor((now - date) / 1000); // 초 단위
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = Math.floor((now - date) / 1000); // 초 단위
 
-    if (diff < 60) return '방금 전';
-    if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`;
+  if (diff < 60) return '방금 전';
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`;
 
-    // 1주일 이상: "2025.10.16"
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}.${month}.${day}`;
+  // 1주일 이상: "2025.10.16"
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}.${month}.${day}`;
 }
 
 /**
@@ -53,8 +53,8 @@ function formatDate(dateString) {
  * @returns {string}
  */
 function formatNumber(num) {
-    if (typeof num !== 'number') return '0';
-    return num.toLocaleString('ko-KR');
+  if (typeof num !== 'number') return '0';
+  return num.toLocaleString('ko-KR');
 }
 
 /**
@@ -65,10 +65,10 @@ function formatNumber(num) {
  * @returns {string}
  */
 function formatNumberCompact(num) {
-    if (typeof num !== 'number') return '0';
-    if (num >= 10000) return `${Math.floor(num / 1000)}k`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
-    return num.toString();
+  if (typeof num !== 'number') return '0';
+  if (num >= 10000) return `${Math.floor(num / 1000)}k`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+  return num.toString();
 }
 
 /**
@@ -79,8 +79,8 @@ function formatNumberCompact(num) {
  * @returns {string} DiceBear API URL
  */
 function getProfilePlaceholder(userId) {
-    const seed = userId || 'default';
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
+  const seed = userId || 'default';
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
 }
 
 /**
@@ -91,12 +91,12 @@ function getProfilePlaceholder(userId) {
  * @param {string} title - 제목 (기본: '오류')
  */
 function showError(message, title = '오류') {
-    if (typeof Toast !== 'undefined') {
-        Toast.error(message, title);
-    } else {
-        console.error('Toast not loaded, message:', message);
-        alert(message); // Fallback
-    }
+  if (typeof Toast !== 'undefined') {
+    Toast.error(message, title);
+  } else {
+    console.error('Toast not loaded, message:', message);
+    alert(message); // Fallback
+  }
 }
 
 /**
@@ -107,12 +107,12 @@ function showError(message, title = '오류') {
  * @param {string} title - 제목 (기본: '성공')
  */
 function showSuccess(message, title = '성공') {
-    if (typeof Toast !== 'undefined') {
-        Toast.success(message, title);
-    } else {
-        console.warn('Toast not loaded, message:', message);
-        alert(message); // Fallback
-    }
+  if (typeof Toast !== 'undefined') {
+    Toast.success(message, title);
+  } else {
+    console.warn('Toast not loaded, message:', message);
+    alert(message); // Fallback
+  }
 }
 
 /**
@@ -123,14 +123,14 @@ function showSuccess(message, title = '성공') {
  * @param {string} selector - 선택자 (기본: '[data-loading]')
  */
 function showLoading(show, selector = '[data-loading]') {
-    const loadingElement = document.querySelector(selector);
-    if (!loadingElement) return;
+  const loadingElement = document.querySelector(selector);
+  if (!loadingElement) return;
 
-    if (show) {
-        loadingElement.style.display = 'flex';
-    } else {
-        loadingElement.style.display = 'none';
-    }
+  if (show) {
+    loadingElement.style.display = 'flex';
+  } else {
+    loadingElement.style.display = 'none';
+  }
 }
 
 /**
@@ -142,22 +142,22 @@ function showLoading(show, selector = '[data-loading]') {
  * @returns {string}
  */
 function formatAbsoluteDate(date, format = 'YYYY-MM-DD HH:mm:ss') {
-    const d = new Date(date);
+  const d = new Date(date);
 
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    const seconds = String(d.getSeconds()).padStart(2, '0');
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
 
-    return format
-        .replace('YYYY', year)
-        .replace('MM', month)
-        .replace('DD', day)
-        .replace('HH', hours)
-        .replace('mm', minutes)
-        .replace('ss', seconds);
+  return format
+    .replace('YYYY', year)
+    .replace('MM', month)
+    .replace('DD', day)
+    .replace('HH', hours)
+    .replace('mm', minutes)
+    .replace('ss', seconds);
 }
 
 /**
@@ -169,15 +169,15 @@ function formatAbsoluteDate(date, format = 'YYYY-MM-DD HH:mm:ss') {
  * @returns {Function}
  */
 function debounce(func, wait = 300) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
     };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
 }
 
 /**
@@ -189,14 +189,14 @@ function debounce(func, wait = 300) {
  * @returns {Function}
  */
 function throttle(func, limit = 300) {
-    let inThrottle;
-    return function(...args) {
-        if (!inThrottle) {
-            func.apply(this, args);
-            inThrottle = true;
-            setTimeout(() => inThrottle = false, limit);
-        }
-    };
+  let inThrottle;
+  return function (...args) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
 }
 
 /**
@@ -207,12 +207,12 @@ function throttle(func, limit = 300) {
  * @returns {Object}
  */
 function parseQuery(queryString = window.location.search) {
-    const params = new URLSearchParams(queryString);
-    const result = {};
-    for (const [key, value] of params) {
-        result[key] = value;
-    }
-    return result;
+  const params = new URLSearchParams(queryString);
+  const result = {};
+  for (const [key, value] of params) {
+    result[key] = value;
+  }
+  return result;
 }
 
 /**
@@ -223,8 +223,8 @@ function parseQuery(queryString = window.location.search) {
  * @returns {string}
  */
 function buildQuery(params) {
-    const query = new URLSearchParams(params);
-    return query.toString();
+  const query = new URLSearchParams(params);
+  return query.toString();
 }
 
 /**
@@ -237,17 +237,17 @@ function buildQuery(params) {
  * @returns {Promise<boolean>} - 확인: true, 취소: false
  */
 function confirmModal(title, description, options = {}) {
-    return new Promise((resolve) => {
-        // 기존 모달이 있으면 제거
-        const existingModal = document.querySelector('[data-modal="confirm-dynamic"]');
-        if (existingModal) {
-            existingModal.remove();
-        }
+  return new Promise((resolve) => {
+    // 기존 모달이 있으면 제거
+    const existingModal = document.querySelector('[data-modal="confirm-dynamic"]');
+    if (existingModal) {
+      existingModal.remove();
+    }
 
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        overlay.setAttribute('data-modal', 'confirm-dynamic');
-        overlay.innerHTML = `
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.setAttribute('data-modal', 'confirm-dynamic');
+    overlay.innerHTML = `
             <div class="modal modal--confirm">
                 <div class="modal__body">
                     <div class="modal__icon modal__icon--warning">
@@ -265,38 +265,38 @@ function confirmModal(title, description, options = {}) {
             </div>
         `;
 
-        document.body.appendChild(overlay);
-        document.body.classList.add('modal-open');
+    document.body.appendChild(overlay);
+    document.body.classList.add('modal-open');
 
-        setTimeout(() => overlay.classList.add('is-active'), 10);
+    setTimeout(() => overlay.classList.add('is-active'), 10);
 
-        const closeModal = () => {
-            overlay.classList.remove('is-active');
-            setTimeout(() => {
-                overlay.remove();
-                if (!document.querySelector('.modal-overlay.is-active')) {
-                    document.body.classList.remove('modal-open');
-                }
-            }, 300);
-        };
+    const closeModal = () => {
+      overlay.classList.remove('is-active');
+      setTimeout(() => {
+        overlay.remove();
+        if (!document.querySelector('.modal-overlay.is-active')) {
+          document.body.classList.remove('modal-open');
+        }
+      }, 300);
+    };
 
-        overlay.querySelector('[data-action="cancel"]').addEventListener('click', () => {
-            closeModal();
-            resolve(false);
-        });
-
-        overlay.querySelector('[data-action="confirm"]').addEventListener('click', () => {
-            closeModal();
-            resolve(true);
-        });
-
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                closeModal();
-                resolve(false);
-            }
-        });
+    overlay.querySelector('[data-action="cancel"]').addEventListener('click', () => {
+      closeModal();
+      resolve(false);
     });
+
+    overlay.querySelector('[data-action="confirm"]').addEventListener('click', () => {
+      closeModal();
+      resolve(true);
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeModal();
+        resolve(false);
+      }
+    });
+  });
 }
 
 /**
@@ -307,17 +307,17 @@ function confirmModal(title, description, options = {}) {
  * @returns {Promise<boolean>} - 로그인 페이지로 이동하면 true (실제로는 페이지 이동하므로 resolve 안됨)
  */
 function loginRequiredModal(action = '이 기능') {
-    return new Promise((resolve) => {
-        // 기존 모달이 있으면 제거
-        const existingModal = document.querySelector('[data-modal="login-required"]');
-        if (existingModal) {
-            existingModal.remove();
-        }
+  return new Promise((resolve) => {
+    // 기존 모달이 있으면 제거
+    const existingModal = document.querySelector('[data-modal="login-required"]');
+    if (existingModal) {
+      existingModal.remove();
+    }
 
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        overlay.setAttribute('data-modal', 'login-required');
-        overlay.innerHTML = `
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.setAttribute('data-modal', 'login-required');
+    overlay.innerHTML = `
             <div class="modal modal--confirm">
                 <div class="modal__body">
                     <div class="modal__icon modal__icon--info">
@@ -335,37 +335,37 @@ function loginRequiredModal(action = '이 기능') {
             </div>
         `;
 
-        document.body.appendChild(overlay);
-        document.body.classList.add('modal-open');
+    document.body.appendChild(overlay);
+    document.body.classList.add('modal-open');
 
-        setTimeout(() => overlay.classList.add('is-active'), 10);
+    setTimeout(() => overlay.classList.add('is-active'), 10);
 
-        const closeModal = () => {
-            overlay.classList.remove('is-active');
-            setTimeout(() => {
-                overlay.remove();
-                if (!document.querySelector('.modal-overlay.is-active')) {
-                    document.body.classList.remove('modal-open');
-                }
-            }, 300);
-        };
+    const closeModal = () => {
+      overlay.classList.remove('is-active');
+      setTimeout(() => {
+        overlay.remove();
+        if (!document.querySelector('.modal-overlay.is-active')) {
+          document.body.classList.remove('modal-open');
+        }
+      }, 300);
+    };
 
-        overlay.querySelector('[data-action="cancel"]').addEventListener('click', () => {
-            closeModal();
-            resolve(false);
-        });
-
-        overlay.querySelector('[data-action="login"]').addEventListener('click', () => {
-            closeModal();
-            // 로그인 페이지로 이동
-            window.location.href = '/pages/user/login.html';
-        });
-
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                closeModal();
-                resolve(false);
-            }
-        });
+    overlay.querySelector('[data-action="cancel"]').addEventListener('click', () => {
+      closeModal();
+      resolve(false);
     });
+
+    overlay.querySelector('[data-action="login"]').addEventListener('click', () => {
+      closeModal();
+      // 로그인 페이지로 이동
+      window.location.href = '/pages/user/login.html';
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeModal();
+        resolve(false);
+      }
+    });
+  });
 }

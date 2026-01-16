@@ -8,7 +8,8 @@ const PORT = process.env.PORT || 3000;
 // ========================================
 // 서버 시작 시 config.js 생성 (환경변수 기반)
 // ========================================
-const BACKEND_URL = process.env.BACKEND_URL !== undefined ? process.env.BACKEND_URL : 'http://localhost:8080';
+const BACKEND_URL =
+  process.env.BACKEND_URL !== undefined ? process.env.BACKEND_URL : 'http://localhost:8080';
 // API_PREFIX: 로컬 '' (기존 방식), 프로덕션 '/api/v1' (ALB path rewrite)
 const API_PREFIX = process.env.API_PREFIX !== undefined ? process.env.API_PREFIX : '';
 
@@ -99,10 +100,12 @@ app.get('/privacy', (req, res) => {
 // ========================================
 // 정적 파일 서빙 (Clean URL 라우팅 후에 실행)
 // ========================================
-app.use(express.static(path.join(__dirname, 'origin_source/static'), {
-  index: false,      // 디렉토리 리스팅 비활성화
-  dotfiles: 'ignore' // 숨김 파일 무시
-}));
+app.use(
+  express.static(path.join(__dirname, 'origin_source/static'), {
+    index: false, // 디렉토리 리스팅 비활성화
+    dotfiles: 'ignore', // 숨김 파일 무시
+  })
+);
 
 // 404 처리
 app.use((req, res) => {

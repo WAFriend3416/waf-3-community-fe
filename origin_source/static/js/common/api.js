@@ -22,7 +22,7 @@ const LOGIN_URL = '/page/login';
  * @returns {string|null}
  */
 function getAccessToken() {
-    return localStorage.getItem('access_token');
+  return localStorage.getItem('access_token');
 }
 
 /**
@@ -30,14 +30,14 @@ function getAccessToken() {
  * @param {string} token - JWT Access Token
  */
 function setAccessToken(token) {
-    localStorage.setItem('access_token', token);
+  localStorage.setItem('access_token', token);
 }
 
 /**
  * Access Token 제거
  */
 function removeAccessToken() {
-    localStorage.removeItem('access_token');
+  localStorage.removeItem('access_token');
 }
 
 // ========================================
@@ -53,19 +53,20 @@ function removeAccessToken() {
  * @returns {Object|null} - payload 객체 또는 null
  */
 function decodeJWT(token) {
-    try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-            atob(base64).split('').map(c =>
-                '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
-            ).join('')
-        );
-        return JSON.parse(jsonPayload);
-    } catch (error) {
-        console.error('JWT decode failed:', error);
-        return null;
-    }
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('JWT decode failed:', error);
+    return null;
+  }
 }
 
 /**
@@ -74,16 +75,16 @@ function decodeJWT(token) {
  * @returns {number|null} - userId 또는 null
  */
 function getUserIdFromToken(token) {
-    if (!token) return null;
+  if (!token) return null;
 
-    const payload = decodeJWT(token);
-    if (!payload || !payload.sub) {
-        console.warn('Invalid JWT payload or missing sub claim');
-        return null;
-    }
+  const payload = decodeJWT(token);
+  if (!payload || !payload.sub) {
+    console.warn('Invalid JWT payload or missing sub claim');
+    return null;
+  }
 
-    const userId = parseInt(payload.sub, 10);
-    return isNaN(userId) ? null : userId;
+  const userId = parseInt(payload.sub, 10);
+  return isNaN(userId) ? null : userId;
 }
 
 /**
@@ -98,74 +99,74 @@ function getUserIdFromToken(token) {
  * @returns {Promise<any>} - ApiResponse.data 또는 { success: true }
  */
 async function fetchWithAuth(url, options = {}) {
-    const csrfToken = getCsrfToken();
-    const accessToken = getAccessToken();
+  const csrfToken = getCsrfToken();
+  const accessToken = getAccessToken();
 
-    const config = {
-        ...options,
-        credentials: 'include',  // HttpOnly Cookie 자동 전송
-        headers: {
-            ...(options.body && { 'Content-Type': 'application/json' }),  // body 있을 때만 Content-Type 추가
-            ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),  // Access Token 추가
-            ...(csrfToken && { 'X-XSRF-TOKEN': csrfToken }),  // CSRF 토큰 추가
-            ...options.headers
+  const config = {
+    ...options,
+    credentials: 'include', // HttpOnly Cookie 자동 전송
+    headers: {
+      ...(options.body && { 'Content-Type': 'application/json' }), // body 있을 때만 Content-Type 추가
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }), // Access Token 추가
+      ...(csrfToken && { 'X-XSRF-TOKEN': csrfToken }), // CSRF 토큰 추가
+      ...options.headers,
+    },
+  };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${API_PREFIX}${url}`, config);
+
+    // 401 Unauthorized → 에러 코드 우선 체크
+    if (response.status === 401) {
+      // ① 에러 코드 먼저 확인 (response.clone() 사용)
+      const clonedResponse = response.clone();
+      try {
+        const errorData = await clonedResponse.json();
+
+        // ② 로그인 실패 등 인증 정보 오류는 토큰 갱신하지 않고 바로 throw
+        const authFailures = ['AUTH-001']; // Invalid credentials
+        const errorCode = errorData.message?.match(/([A-Z]+-\d+)/)?.[1];
+
+        if (authFailures.includes(errorCode)) {
+          throw new Error(errorData.message);
         }
-    };
-
-    try {
-        const response = await fetch(`${API_BASE_URL}${API_PREFIX}${url}`, config);
-
-        // 401 Unauthorized → 에러 코드 우선 체크
-        if (response.status === 401) {
-            // ① 에러 코드 먼저 확인 (response.clone() 사용)
-            const clonedResponse = response.clone();
-            try {
-                const errorData = await clonedResponse.json();
-
-                // ② 로그인 실패 등 인증 정보 오류는 토큰 갱신하지 않고 바로 throw
-                const authFailures = ['AUTH-001']; // Invalid credentials
-                const errorCode = errorData.message?.match(/([A-Z]+-\d+)/)?.[1];
-
-                if (authFailures.includes(errorCode)) {
-                    throw new Error(errorData.message);
-                }
-            } catch (parseError) {
-                // JSON 파싱 실패 또는 에러 throw 시
-                if (parseError.message?.match(/([A-Z]+-\d+)/)) {
-                    // 명시적으로 던진 에러면 그대로 throw
-                    throw parseError;
-                }
-                // JSON 파싱 실패면 기존 로직 진행
-                console.warn('Failed to parse 401 error response:', parseError);
-            }
-
-            // ③ 그 외 401(토큰 만료 등)은 토큰 갱신 시도
-            const refreshed = await refreshAccessToken();
-            if (refreshed) {
-                // 토큰 갱신 성공 → 원래 요청 재시도
-                const retryResponse = await fetch(`${API_BASE_URL}${API_PREFIX}${url}`, config);
-                return handleResponse(retryResponse);
-            } else {
-                // 토큰 갱신 실패 → 로그인 페이지로 리다이렉트
-                logout();
-                window.location.href = LOGIN_URL;
-                throw new Error('Authentication failed');
-            }
+      } catch (parseError) {
+        // JSON 파싱 실패 또는 에러 throw 시
+        if (parseError.message?.match(/([A-Z]+-\d+)/)) {
+          // 명시적으로 던진 에러면 그대로 throw
+          throw parseError;
         }
+        // JSON 파싱 실패면 기존 로직 진행
+        console.warn('Failed to parse 401 error response:', parseError);
+      }
 
-        return handleResponse(response);
-    } catch (error) {
-        console.error('API Error:', error);
-
-        // Network Error 감지 (백엔드 서버 다운 또는 네트워크 불가)
-        if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            const networkError = new Error('NETWORK-ERROR');
-            networkError.originalError = error;
-            throw networkError;
-        }
-
-        throw error;
+      // ③ 그 외 401(토큰 만료 등)은 토큰 갱신 시도
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        // 토큰 갱신 성공 → 원래 요청 재시도
+        const retryResponse = await fetch(`${API_BASE_URL}${API_PREFIX}${url}`, config);
+        return handleResponse(retryResponse);
+      } else {
+        // 토큰 갱신 실패 → 로그인 페이지로 리다이렉트
+        logout();
+        window.location.href = LOGIN_URL;
+        throw new Error('Authentication failed');
+      }
     }
+
+    return handleResponse(response);
+  } catch (error) {
+    console.error('API Error:', error);
+
+    // Network Error 감지 (백엔드 서버 다운 또는 네트워크 불가)
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      const networkError = new Error('NETWORK-ERROR');
+      networkError.originalError = error;
+      throw networkError;
+    }
+
+    throw error;
+  }
 }
 
 /**
@@ -179,30 +180,28 @@ async function fetchWithAuth(url, options = {}) {
  * @returns {Promise<any>}
  */
 async function handleResponse(response) {
-    if (response.status === 204) return { success: true };
+  if (response.status === 204) return { success: true };
 
-    // 429 Too Many Requests - Rate Limit 처리
-    if (response.status === 429) {
-        const retryAfter = response.headers.get('Retry-After');
-        const message = translateErrorCode('COMMON-004');
+  // 429 Too Many Requests - Rate Limit 처리
+  if (response.status === 429) {
+    const retryAfter = response.headers.get('Retry-After');
+    const message = translateErrorCode('COMMON-004');
 
-        // Toast 알림 (toast.js가 로드되어 있으면)
-        if (typeof Toast !== 'undefined') {
-            const retryMessage = retryAfter
-                ? `${message} (${retryAfter}초 후 다시 시도)`
-                : message;
-            Toast.warning(retryMessage, 'Rate Limit');
-        }
-
-        const error = new Error('COMMON-004');
-        error.retryAfter = retryAfter ? parseInt(retryAfter, 10) : null;
-        throw error;
+    // Toast 알림 (toast.js가 로드되어 있으면)
+    if (typeof Toast !== 'undefined') {
+      const retryMessage = retryAfter ? `${message} (${retryAfter}초 후 다시 시도)` : message;
+      Toast.warning(retryMessage, 'Rate Limit');
     }
 
-    const data = await response.json();
-    if (response.ok) return data.data; // ApiResponse의 data 필드 반환
+    const error = new Error('COMMON-004');
+    error.retryAfter = retryAfter ? parseInt(retryAfter, 10) : null;
+    throw error;
+  }
 
-    throw new Error(data.message || 'API request failed');
+  const data = await response.json();
+  if (response.ok) return data.data; // ApiResponse의 data 필드 반환
+
+  throw new Error(data.message || 'API request failed');
 }
 
 // 토큰 갱신 Promise 캐시 (동시 호출 방지)
@@ -218,41 +217,41 @@ let refreshTokenPromise = null;
  * @returns {Promise<boolean>} 갱신 성공 여부
  */
 async function refreshAccessToken() {
-    // 이미 갱신 중이면 기존 Promise 반환 (중복 호출 방지)
-    if (refreshTokenPromise) {
-        return refreshTokenPromise;
-    }
-
-    // 새로운 갱신 시작
-    refreshTokenPromise = (async () => {
-        try {
-            const response = await fetch(`${API_BASE_URL}${API_PREFIX}/auth/refresh_token`, {
-                method: 'POST',
-                credentials: 'include',  // refresh_token Cookie 자동 전송
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                // 응답 body의 accessToken을 localStorage에 저장
-                if (data.data && data.data.accessToken) {
-                    setAccessToken(data.data.accessToken);
-                    return true;
-                }
-                console.error('Token refresh response missing accessToken:', data);
-                return false;
-            }
-            return false;
-        } catch (error) {
-            console.error('Token refresh failed:', error);
-            return false;
-        } finally {
-            // 갱신 완료 후 캐시 초기화 (다음 갱신을 위해)
-            refreshTokenPromise = null;
-        }
-    })();
-
+  // 이미 갱신 중이면 기존 Promise 반환 (중복 호출 방지)
+  if (refreshTokenPromise) {
     return refreshTokenPromise;
+  }
+
+  // 새로운 갱신 시작
+  refreshTokenPromise = (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_PREFIX}/auth/refresh_token`, {
+        method: 'POST',
+        credentials: 'include', // refresh_token Cookie 자동 전송
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // 응답 body의 accessToken을 localStorage에 저장
+        if (data.data && data.data.accessToken) {
+          setAccessToken(data.data.accessToken);
+          return true;
+        }
+        console.error('Token refresh response missing accessToken:', data);
+        return false;
+      }
+      return false;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      return false;
+    } finally {
+      // 갱신 완료 후 캐시 초기화 (다음 갱신을 위해)
+      refreshTokenPromise = null;
+    }
+  })();
+
+  return refreshTokenPromise;
 }
 
 /**
@@ -263,20 +262,20 @@ async function refreshAccessToken() {
  * 참고: /auth/logout은 인증 필요 (SecurityConfig)
  */
 async function logout() {
-    try {
-        await fetch(`${API_BASE_URL}${API_PREFIX}/auth/logout`, {
-            method: 'POST',
-            credentials: 'include',  // Cookie 자동 전송
-            headers: { 'Content-Type': 'application/json' }
-        });
-    } catch (error) {
-        console.error('Logout request failed:', error);
-    }
+  try {
+    await fetch(`${API_BASE_URL}${API_PREFIX}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include', // Cookie 자동 전송
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Logout request failed:', error);
+  }
 
-    // localStorage에서 access_token 제거
-    removeAccessToken();
+  // localStorage에서 access_token 제거
+  removeAccessToken();
 
-    // 서버가 Cookie 삭제 처리 (MaxAge=0)
+  // 서버가 Cookie 삭제 처리 (MaxAge=0)
 }
 
 /**
@@ -287,8 +286,8 @@ async function logout() {
  * @returns {boolean} - access_token이 있으면 true, 없으면 false
  */
 function isAuthenticated() {
-    const token = getAccessToken();
-    return !!token;
+  const token = getAccessToken();
+  return !!token;
 }
 
 /**
@@ -299,14 +298,14 @@ function isAuthenticated() {
  * @returns {number|null}
  */
 function getCurrentUserId() {
-    const token = getAccessToken();
+  const token = getAccessToken();
 
-    if (!token) {
-        console.warn('Access token not found in memory');
-        return null;
-    }
+  if (!token) {
+    console.warn('Access token not found in memory');
+    return null;
+  }
 
-    return getUserIdFromToken(token);
+  return getUserIdFromToken(token);
 }
 
 /**
@@ -317,41 +316,41 @@ function getCurrentUserId() {
  * @returns {Promise<{imageId: number, imageUrl: string}>}
  */
 async function uploadImageMultipart(file) {
-    const csrfToken = getCsrfToken();
-    const accessToken = getAccessToken();
-    const formData = new FormData();
-    formData.append('file', file);
+  const csrfToken = getCsrfToken();
+  const accessToken = getAccessToken();
+  const formData = new FormData();
+  formData.append('file', file);
 
-    const headers = {};
-    if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
+  const headers = {};
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+  if (csrfToken) {
+    headers['X-XSRF-TOKEN'] = csrfToken;
+  }
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${API_PREFIX}/images`, {
+      method: 'POST',
+      credentials: 'include', // Cookie 자동 전송
+      headers: headers, // Authorization + CSRF 토큰 추가
+      body: formData, // Content-Type 자동 설정 (multipart/form-data)
+    });
+  } catch (error) {
+    // Network Error 감지 (TypeError "Failed to fetch")
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      const networkError = new Error('NETWORK-ERROR');
+      networkError.originalError = error;
+      throw networkError;
     }
-    if (csrfToken) {
-        headers['X-XSRF-TOKEN'] = csrfToken;
-    }
+    throw error;
+  }
 
-    let response;
-    try {
-        response = await fetch(`${API_BASE_URL}${API_PREFIX}/images`, {
-            method: 'POST',
-            credentials: 'include',  // Cookie 자동 전송
-            headers: headers,  // Authorization + CSRF 토큰 추가
-            body: formData  // Content-Type 자동 설정 (multipart/form-data)
-        });
-    } catch (error) {
-        // Network Error 감지 (TypeError "Failed to fetch")
-        if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            const networkError = new Error('NETWORK-ERROR');
-            networkError.originalError = error;
-            throw networkError;
-        }
-        throw error;
-    }
+  const data = await response.json();
+  if (response.ok) return data.data; // { imageId, imageUrl }
 
-    const data = await response.json();
-    if (response.ok) return data.data; // { imageId, imageUrl }
-
-    throw new Error(data.message);
+  throw new Error(data.message);
 }
 
 /**
@@ -364,90 +363,89 @@ async function uploadImageMultipart(file) {
  * @returns {Promise<{imageId: number, imageUrl: string}>}
  */
 async function uploadImage(file) {
-    // Guest Token 확인 (회원가입 시)
-    const guestToken = sessionStorage.getItem('guestToken');
+  // Guest Token 확인 (회원가입 시)
+  const guestToken = sessionStorage.getItem('guestToken');
 
-    try {
-        let presignedData;
+  try {
+    let presignedData;
 
-        if (guestToken) {
-            // Guest Token 사용 (회원가입) - 직접 fetch
-            const csrfToken = getCsrfToken();
-            const headers = {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${guestToken}`
-            };
-            if (csrfToken) {
-                headers['X-XSRF-TOKEN'] = csrfToken;
-            }
+    if (guestToken) {
+      // Guest Token 사용 (회원가입) - 직접 fetch
+      const csrfToken = getCsrfToken();
+      const headers = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${guestToken}`,
+      };
+      if (csrfToken) {
+        headers['X-XSRF-TOKEN'] = csrfToken;
+      }
 
-            const presignedResponse = await fetch(
-                `${API_BASE_URL}${API_PREFIX}/images/presigned-url?filename=${encodeURIComponent(file.name)}`,
-                {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: headers
-                }
-            );
-
-            if (!presignedResponse.ok) {
-                let errorMessage = 'IMAGE-004';
-                try {
-                    const errorData = await presignedResponse.json();
-                    errorMessage = errorData.message || 'IMAGE-004';
-                } catch (parseError) {
-                    console.error('Failed to parse presigned URL error response:', parseError);
-                    errorMessage = presignedResponse.status === 404 ? 'IMAGE-001' : 'IMAGE-004';
-                }
-                throw new Error(errorMessage);
-            }
-
-            const responseData = await presignedResponse.json();
-            presignedData = responseData.data;
-        } else {
-            // Access Token 사용 (로그인 사용자) - fetchWithAuth로 자동 토큰 갱신
-            presignedData = await fetchWithAuth(
-                `/images/presigned-url?filename=${encodeURIComponent(file.name)}`,
-                { method: 'GET' }
-            );
+      const presignedResponse = await fetch(
+        `${API_BASE_URL}${API_PREFIX}/images/presigned-url?filename=${encodeURIComponent(file.name)}`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: headers,
         }
+      );
 
-        // 백엔드 응답: { image_id, upload_url } (snake_case)
-        const imageId = presignedData.image_id;
-        const uploadUrl = presignedData.upload_url;
-
-        // Step 2: S3 직접 업로드
-        // x-amz-acl: presigned URL 생성 시 ACL이 포함되어 있으면 필수
-        const uploadResponse = await fetch(uploadUrl, {
-            method: 'PUT',
-            body: file,
-            headers: {
-                'Content-Type': file.type,
-                'x-amz-acl': 'public-read'
-            }
-        });
-
-        if (!uploadResponse.ok) {
-            throw new Error('IMAGE-002');  // S3 업로드 실패
+      if (!presignedResponse.ok) {
+        let errorMessage = 'IMAGE-004';
+        try {
+          const errorData = await presignedResponse.json();
+          errorMessage = errorData.message || 'IMAGE-004';
+        } catch (parseError) {
+          console.error('Failed to parse presigned URL error response:', parseError);
+          errorMessage = presignedResponse.status === 404 ? 'IMAGE-001' : 'IMAGE-004';
         }
+        throw new Error(errorMessage);
+      }
 
-        // imageUrl: presigned URL에서 쿼리 파라미터 제거
-        const imageUrl = uploadUrl.split('?')[0];
-
-        return { imageId, imageUrl };
-
-    } catch (error) {
-        console.error('Image upload failed:', error);
-
-        // Network Error 감지
-        if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            const networkError = new Error('NETWORK-ERROR');
-            networkError.originalError = error;
-            throw networkError;
-        }
-
-        throw error;
+      const responseData = await presignedResponse.json();
+      presignedData = responseData.data;
+    } else {
+      // Access Token 사용 (로그인 사용자) - fetchWithAuth로 자동 토큰 갱신
+      presignedData = await fetchWithAuth(
+        `/images/presigned-url?filename=${encodeURIComponent(file.name)}`,
+        { method: 'GET' }
+      );
     }
+
+    // 백엔드 응답: { image_id, upload_url } (snake_case)
+    const imageId = presignedData.image_id;
+    const uploadUrl = presignedData.upload_url;
+
+    // Step 2: S3 직접 업로드
+    // x-amz-acl: presigned URL 생성 시 ACL이 포함되어 있으면 필수
+    const uploadResponse = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type,
+        'x-amz-acl': 'public-read',
+      },
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error('IMAGE-002'); // S3 업로드 실패
+    }
+
+    // imageUrl: presigned URL에서 쿼리 파라미터 제거
+    const imageUrl = uploadUrl.split('?')[0];
+
+    return { imageId, imageUrl };
+  } catch (error) {
+    console.error('Image upload failed:', error);
+
+    // Network Error 감지
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      const networkError = new Error('NETWORK-ERROR');
+      networkError.originalError = error;
+      throw networkError;
+    }
+
+    throw error;
+  }
 }
 
 /**
@@ -459,57 +457,58 @@ async function uploadImage(file) {
  * @returns {string} - 사용자 메시지
  */
 function translateErrorCode(code) {
-    const errorMessages = {
-        // Network Error
-        'NETWORK-ERROR': '서버에 연결할 수 없습니다. 네트워크 연결을 확인하거나 잠시 후 다시 시도해주세요.',
+  const errorMessages = {
+    // Network Error
+    'NETWORK-ERROR':
+      '서버에 연결할 수 없습니다. 네트워크 연결을 확인하거나 잠시 후 다시 시도해주세요.',
 
-        // AUTH 에러
-        'AUTH-001': '이메일 또는 비밀번호가 일치하지 않습니다.',
-        'AUTH-002': '유효하지 않은 토큰입니다.',
-        'AUTH-003': '토큰이 만료되었습니다.',
-        'AUTH-004': '유효하지 않은 리프레시 토큰입니다.',
+    // AUTH 에러
+    'AUTH-001': '이메일 또는 비밀번호가 일치하지 않습니다.',
+    'AUTH-002': '유효하지 않은 토큰입니다.',
+    'AUTH-003': '토큰이 만료되었습니다.',
+    'AUTH-004': '유효하지 않은 리프레시 토큰입니다.',
 
-        // USER 에러
-        'USER-001': '사용자를 찾을 수 없습니다.',
-        'USER-002': '이미 사용 중인 이메일입니다.',
-        'USER-003': '이미 사용 중인 닉네임입니다.',
-        'USER-004': '비밀번호는 8-20자, 대/소/특수문자를 각각 1개 이상 포함해야 합니다.',
-        'USER-005': '계정이 비활성화되었습니다.',
-        'USER-006': '비밀번호가 일치하지 않습니다.',
-        'USER-007': '권한이 없습니다.',
+    // USER 에러
+    'USER-001': '사용자를 찾을 수 없습니다.',
+    'USER-002': '이미 사용 중인 이메일입니다.',
+    'USER-003': '이미 사용 중인 닉네임입니다.',
+    'USER-004': '비밀번호는 8-20자, 대/소/특수문자를 각각 1개 이상 포함해야 합니다.',
+    'USER-005': '계정이 비활성화되었습니다.',
+    'USER-006': '비밀번호가 일치하지 않습니다.',
+    'USER-007': '권한이 없습니다.',
 
-        // POST 에러
-        'POST-001': '게시글을 찾을 수 없습니다.',
-        'POST-002': '게시글 작성자만 수정/삭제할 수 있습니다.',
-        'POST-003': '이미 삭제된 게시글입니다.',
-        'POST-004': '유효하지 않은 게시글 상태입니다.',
+    // POST 에러
+    'POST-001': '게시글을 찾을 수 없습니다.',
+    'POST-002': '게시글 작성자만 수정/삭제할 수 있습니다.',
+    'POST-003': '이미 삭제된 게시글입니다.',
+    'POST-004': '유효하지 않은 게시글 상태입니다.',
 
-        // COMMENT 에러
-        'COMMENT-001': '댓글을 찾을 수 없습니다.',
-        'COMMENT-002': '댓글 작성자만 수정/삭제할 수 있습니다.',
-        'COMMENT-003': '이미 삭제된 댓글입니다.',
+    // COMMENT 에러
+    'COMMENT-001': '댓글을 찾을 수 없습니다.',
+    'COMMENT-002': '댓글 작성자만 수정/삭제할 수 있습니다.',
+    'COMMENT-003': '이미 삭제된 댓글입니다.',
 
-        // LIKE 에러
-        'LIKE-001': '이미 좋아요를 눌렀습니다.',
-        'LIKE-002': '좋아요를 찾을 수 없습니다.',
+    // LIKE 에러
+    'LIKE-001': '이미 좋아요를 눌렀습니다.',
+    'LIKE-002': '좋아요를 찾을 수 없습니다.',
 
-        // IMAGE 에러
-        'IMAGE-001': '이미지를 찾을 수 없습니다.',
-        'IMAGE-002': '파일 크기는 5MB 이하여야 합니다.',
-        'IMAGE-003': '지원하지 않는 파일 형식입니다. (JPG, PNG, GIF만 가능)',
-        'IMAGE-004': '유효하지 않은 이미지 URL입니다.',
+    // IMAGE 에러
+    'IMAGE-001': '이미지를 찾을 수 없습니다.',
+    'IMAGE-002': '파일 크기는 5MB 이하여야 합니다.',
+    'IMAGE-003': '지원하지 않는 파일 형식입니다. (JPG, PNG, GIF만 가능)',
+    'IMAGE-004': '유효하지 않은 이미지 URL입니다.',
 
-        // COMMON 에러
-        'COMMON-001': '입력 데이터가 올바르지 않습니다.',
-        'COMMON-002': '리소스를 찾을 수 없습니다.',
-        'COMMON-003': '리소스 충돌이 발생했습니다.',
-        'COMMON-004': '요청 횟수가 너무 많습니다. 잠시 후 다시 시도해주세요.',
-        'COMMON-999': '서버 오류가 발생했습니다.'
-    };
+    // COMMON 에러
+    'COMMON-001': '입력 데이터가 올바르지 않습니다.',
+    'COMMON-002': '리소스를 찾을 수 없습니다.',
+    'COMMON-003': '리소스 충돌이 발생했습니다.',
+    'COMMON-004': '요청 횟수가 너무 많습니다. 잠시 후 다시 시도해주세요.',
+    'COMMON-999': '서버 오류가 발생했습니다.',
+  };
 
-    // ErrorCode 추출 (예: "USER-002: Email already exists" → "USER-002")
-    const match = code.match(/([A-Z]+-\d+)/);
-    return match ? (errorMessages[match[1]] || code) : code;
+  // ErrorCode 추출 (예: "USER-002: Email already exists" → "USER-002")
+  const match = code.match(/([A-Z]+-\d+)/);
+  return match ? errorMessages[match[1]] || code : code;
 }
 
 /**
@@ -519,11 +518,10 @@ function translateErrorCode(code) {
  * @returns {string|null} - CSRF 토큰 또는 null
  */
 function getCsrfToken() {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; XSRF-TOKEN=`);
-    if (parts.length === 2) {
-        return parts.pop().split(';').shift();
-    }
-    return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; XSRF-TOKEN=`);
+  if (parts.length === 2) {
+    return parts.pop().split(';').shift();
+  }
+  return null;
 }
-

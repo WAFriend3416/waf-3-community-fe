@@ -17,10 +17,10 @@
  * @returns {boolean}
  */
 function isValidEmail(email) {
-    if (!email || typeof email !== 'string') return false;
+  if (!email || typeof email !== 'string') return false;
 
-    const regex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
-    return regex.test(email.trim());
+  const regex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+  return regex.test(email.trim());
 }
 
 /**
@@ -36,17 +36,17 @@ function isValidEmail(email) {
  * @returns {boolean}
  */
 function isValidPassword(password) {
-    if (!password || typeof password !== 'string') return false;
+  if (!password || typeof password !== 'string') return false;
 
-    // 길이 검증
-    if (password.length < 8 || password.length > 20) return false;
+  // 길이 검증
+  if (password.length < 8 || password.length > 20) return false;
 
-    // 대문자, 소문자, 특수문자 각 1개 이상
-    const hasUpper = /[A-Z]/.test(password);
-    const hasLower = /[a-z]/.test(password);
-    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  // 대문자, 소문자, 특수문자 각 1개 이상
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
-    return hasUpper && hasLower && hasSpecial;
+  return hasUpper && hasLower && hasSpecial;
 }
 
 /**
@@ -59,10 +59,10 @@ function isValidPassword(password) {
  * @returns {boolean}
  */
 function isValidNickname(nickname) {
-    if (!nickname || typeof nickname !== 'string') return false;
+  if (!nickname || typeof nickname !== 'string') return false;
 
-    const trimmed = nickname.trim();
-    return trimmed.length >= 1 && trimmed.length <= 10;
+  const trimmed = nickname.trim();
+  return trimmed.length >= 1 && trimmed.length <= 10;
 }
 
 /**
@@ -75,10 +75,10 @@ function isValidNickname(nickname) {
  * @returns {boolean}
  */
 function isValidTitle(title) {
-    if (!title || typeof title !== 'string') return false;
+  if (!title || typeof title !== 'string') return false;
 
-    const trimmed = title.trim();
-    return trimmed.length >= 1 && trimmed.length <= 27;
+  const trimmed = title.trim();
+  return trimmed.length >= 1 && trimmed.length <= 27;
 }
 
 /**
@@ -91,10 +91,10 @@ function isValidTitle(title) {
  * @returns {boolean}
  */
 function isValidComment(content) {
-    if (!content || typeof content !== 'string') return false;
+  if (!content || typeof content !== 'string') return false;
 
-    const trimmed = content.trim();
-    return trimmed.length >= 1 && trimmed.length <= 200;
+  const trimmed = content.trim();
+  return trimmed.length >= 1 && trimmed.length <= 200;
 }
 
 /**
@@ -105,8 +105,8 @@ function isValidComment(content) {
  * @returns {boolean}
  */
 function isPasswordMatch(password, confirmPassword) {
-    if (!password || !confirmPassword) return false;
-    return password === confirmPassword;
+  if (!password || !confirmPassword) return false;
+  return password === confirmPassword;
 }
 
 /**
@@ -120,15 +120,15 @@ function isPasswordMatch(password, confirmPassword) {
  * @returns {boolean}
  */
 function isValidImageFile(file) {
-    if (!file) return false;
+  if (!file) return false;
 
-    // 5MB 제한
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) return false;
+  // 5MB 제한
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) return false;
 
-    // JPG/PNG/GIF만 허용
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    return allowedTypes.includes(file.type);
+  // JPG/PNG/GIF만 허용
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+  return allowedTypes.includes(file.type);
 }
 
 /**
@@ -139,17 +139,17 @@ function isValidImageFile(file) {
  * @returns {string|null} - 에러 메시지 (문제 없으면 null)
  */
 function getImageFileError(file) {
-    if (!file) return '파일을 선택해주세요.';
+  if (!file) return '파일을 선택해주세요.';
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) return '이미지 파일 크기는 5MB 이하여야 합니다.';
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) return '이미지 파일 크기는 5MB 이하여야 합니다.';
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-        return 'JPG, PNG, GIF 파일만 업로드 가능합니다.';
-    }
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+  if (!allowedTypes.includes(file.type)) {
+    return 'JPG, PNG, GIF 파일만 업로드 가능합니다.';
+  }
 
-    return null;
+  return null;
 }
 
 /**
@@ -159,7 +159,7 @@ function getImageFileError(file) {
  * @returns {string}
  */
 function getPasswordPolicyMessage() {
-    return '비밀번호는 8-20자, 대문자/소문자/특수문자를 각각 1개 이상 포함해야 합니다.';
+  return '비밀번호는 8-20자, 대문자/소문자/특수문자를 각각 1개 이상 포함해야 합니다.';
 }
 
 // ============================================
@@ -175,10 +175,10 @@ function getPasswordPolicyMessage() {
  * @returns {boolean} - true면 정상, false면 도배
  */
 function hasRepeatingCharacters(str, threshold = 4) {
-    if (!str || typeof str !== 'string') return false;
+  if (!str || typeof str !== 'string') return false;
 
-    const regex = new RegExp(`(.)\\1{${threshold - 1},}`, 'g');
-    return regex.test(str);
+  const regex = new RegExp(`(.)\\1{${threshold - 1},}`, 'g');
+  return regex.test(str);
 }
 
 /**
@@ -189,15 +189,15 @@ function hasRepeatingCharacters(str, threshold = 4) {
  * @returns {boolean} - true면 문제 있음
  */
 function hasExcessiveWhitespace(str) {
-    if (!str || typeof str !== 'string') return false;
+  if (!str || typeof str !== 'string') return false;
 
-    // 연속 공백 3개 이상
-    if (/\s{3,}/.test(str)) return true;
+  // 연속 공백 3개 이상
+  if (/\s{3,}/.test(str)) return true;
 
-    // trim 후 빈 문자열 (공백만 있음)
-    if (str.trim().length === 0) return true;
+  // trim 후 빈 문자열 (공백만 있음)
+  if (str.trim().length === 0) return true;
 
-    return false;
+  return false;
 }
 
 /**
@@ -209,11 +209,11 @@ function hasExcessiveWhitespace(str) {
  * @returns {string} - 정제된 문자열
  */
 function sanitizeInput(str) {
-    if (!str || typeof str !== 'string') return '';
+  if (!str || typeof str !== 'string') return '';
 
-    return str
-        .trim()                    // 앞뒤 공백 제거
-        .replace(/\s+/g, ' ');     // 연속 공백을 하나로
+  return str
+    .trim() // 앞뒤 공백 제거
+    .replace(/\s+/g, ' '); // 연속 공백을 하나로
 }
 
 /**
@@ -237,30 +237,30 @@ function sanitizeInput(str) {
  * @returns {object} - { strength: 'weak|medium|strong', score: 0-6, percentage: 0-100 }
  */
 function getPasswordStrength(password) {
-    if (!password) return { strength: 'weak', score: 0, percentage: 0 };
+  if (!password) return { strength: 'weak', score: 0, percentage: 0 };
 
-    let score = 0;
+  let score = 0;
 
-    // 길이 점수
-    if (password.length >= 8) score++;
-    if (password.length >= 12) score++;
+  // 길이 점수
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
 
-    // 문자 종류 점수
-    if (/[a-z]/.test(password)) score++;  // 소문자
-    if (/[A-Z]/.test(password)) score++;  // 대문자
-    if (/[0-9]/.test(password)) score++;  // 숫자
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++;  // 특수문자
+  // 문자 종류 점수
+  if (/[a-z]/.test(password)) score++; // 소문자
+  if (/[A-Z]/.test(password)) score++; // 대문자
+  if (/[0-9]/.test(password)) score++; // 숫자
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) score++; // 특수문자
 
-    // 강도 판정
-    let strength;
-    if (score <= 2) strength = 'weak';
-    else if (score <= 4) strength = 'medium';
-    else strength = 'strong';
+  // 강도 판정
+  let strength;
+  if (score <= 2) strength = 'weak';
+  else if (score <= 4) strength = 'medium';
+  else strength = 'strong';
 
-    // 퍼센티지 계산 (0-100)
-    const percentage = Math.round((score / 6) * 100);
+  // 퍼센티지 계산 (0-100)
+  const percentage = Math.round((score / 6) * 100);
 
-    return { strength, score, percentage };
+  return { strength, score, percentage };
 }
 
 /**
@@ -271,11 +271,11 @@ function getPasswordStrength(password) {
  * @returns {string}
  */
 function getPasswordStrengthMessage(strength) {
-    const messages = {
-        weak: '약함 - 더 안전한 비밀번호를 사용하세요',
-        medium: '보통 - 괜찮은 비밀번호입니다',
-        strong: '강함 - 안전한 비밀번호입니다'
-    };
+  const messages = {
+    weak: '약함 - 더 안전한 비밀번호를 사용하세요',
+    medium: '보통 - 괜찮은 비밀번호입니다',
+    strong: '강함 - 안전한 비밀번호입니다',
+  };
 
-    return messages[strength] || '';
+  return messages[strength] || '';
 }

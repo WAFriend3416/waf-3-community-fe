@@ -8,13 +8,13 @@
  * - showInfoToast('안내', '댓글이 등록되었습니다.')
  */
 
-const Toast = (function() {
+const Toast = (function () {
   'use strict';
 
   // 설정
   const CONFIG = {
-    DEFAULT_DURATION: 3000,  // 3초
-    ANIMATION_DURATION: 300  // 애니메이션 시간 (ms)
+    DEFAULT_DURATION: 3000, // 3초
+    ANIMATION_DURATION: 300, // 애니메이션 시간 (ms)
   };
 
   // 토스트 컨테이너 생성
@@ -31,10 +31,13 @@ const Toast = (function() {
   // SVG 아이콘 생성
   function getIcon(type) {
     const icons = {
-      success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5" stroke-width="2" stroke-linecap="round"/></svg>',
-      error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01" stroke-width="2" stroke-linecap="round"/></svg>',
-      warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 20h20L12 2z" stroke-width="2" stroke-linecap="round"/><path d="M12 9v4M12 17h.01" stroke-width="2"/></svg>',
-      info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01" stroke-width="2" stroke-linecap="round"/></svg>'
+      success:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5" stroke-width="2" stroke-linecap="round"/></svg>',
+      error:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01" stroke-width="2" stroke-linecap="round"/></svg>',
+      warning:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 20h20L12 2z" stroke-width="2" stroke-linecap="round"/><path d="M12 9v4M12 17h.01" stroke-width="2"/></svg>',
+      info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01" stroke-width="2" stroke-linecap="round"/></svg>',
     };
     return icons[type] || icons.info;
   }
@@ -51,7 +54,7 @@ const Toast = (function() {
       title = '',
       message = '',
       duration = CONFIG.DEFAULT_DURATION,
-      onClose = null
+      onClose = null,
     } = options;
 
     const container = ensureContainer();
@@ -130,13 +133,18 @@ const Toast = (function() {
      * @param {number} duration - 표시 시간 (ms)
      * @param {function} onClose - 닫힐 때 콜백
      */
-    success: function(message, title = '성공', duration = CONFIG.DEFAULT_DURATION, onClose = null) {
+    success: function (
+      message,
+      title = '성공',
+      duration = CONFIG.DEFAULT_DURATION,
+      onClose = null
+    ) {
       return show({
         type: 'success',
         title,
         message,
         duration,
-        onClose
+        onClose,
       });
     },
 
@@ -147,13 +155,13 @@ const Toast = (function() {
      * @param {number} duration - 표시 시간 (ms)
      * @param {function} onClose - 닫힐 때 콜백
      */
-    error: function(message, title = '오류', duration = CONFIG.DEFAULT_DURATION, onClose = null) {
+    error: function (message, title = '오류', duration = CONFIG.DEFAULT_DURATION, onClose = null) {
       return show({
         type: 'error',
         title,
         message,
         duration,
-        onClose
+        onClose,
       });
     },
 
@@ -164,13 +172,18 @@ const Toast = (function() {
      * @param {number} duration - 표시 시간 (ms)
      * @param {function} onClose - 닫힐 때 콜백
      */
-    warning: function(message, title = '경고', duration = CONFIG.DEFAULT_DURATION, onClose = null) {
+    warning: function (
+      message,
+      title = '경고',
+      duration = CONFIG.DEFAULT_DURATION,
+      onClose = null
+    ) {
       return show({
         type: 'warning',
         title,
         message,
         duration,
-        onClose
+        onClose,
       });
     },
 
@@ -181,14 +194,14 @@ const Toast = (function() {
      * @param {number} duration - 표시 시간 (ms)
      * @param {function} onClose - 닫힐 때 콜백
      */
-    info: function(message, title = '안내', duration = CONFIG.DEFAULT_DURATION, onClose = null) {
+    info: function (message, title = '안내', duration = CONFIG.DEFAULT_DURATION, onClose = null) {
       return show({
         type: 'info',
         title,
         message,
         duration,
-        onClose
+        onClose,
       });
-    }
+    },
   };
 })();

@@ -13,7 +13,7 @@ async function startServer() {
   return new Promise((resolve, reject) => {
     const server = spawn('node', ['server.js'], {
       env: { ...process.env, PORT },
-      stdio: 'pipe'
+      stdio: 'pipe',
     });
 
     let started = false;

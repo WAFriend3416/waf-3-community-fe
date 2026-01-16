@@ -13,42 +13,42 @@
  * @returns {Promise<void>}
  */
 async function initAuthHeader() {
-    const profileMenu = document.querySelector('[data-auth="authenticated"]');
-    const guestAuth = document.querySelector('[data-auth="guest"]');
+  const profileMenu = document.querySelector('[data-auth="authenticated"]');
+  const guestAuth = document.querySelector('[data-auth="guest"]');
 
-    if (!isAuthenticated()) {
-        if (profileMenu) profileMenu.style.display = 'none';
-        if (guestAuth) guestAuth.style.display = 'flex';
-        return;
+  if (!isAuthenticated()) {
+    if (profileMenu) profileMenu.style.display = 'none';
+    if (guestAuth) guestAuth.style.display = 'flex';
+    return;
+  }
+
+  if (profileMenu) profileMenu.style.display = 'flex';
+  if (guestAuth) guestAuth.style.display = 'none';
+
+  const userId = getCurrentUserId();
+  if (!userId) return;
+
+  try {
+    // fetchWithAuth는 이미 JSON 파싱된 data 필드를 반환
+    const user = await fetchWithAuth(`/users/${userId}`);
+
+    const profileImage = document.querySelector('[data-profile="image"]');
+    const profileNickname = document.querySelector('[data-profile="nickname"]');
+
+    if (profileImage) {
+      profileImage.src = user.profileImage || getProfilePlaceholder(userId);
     }
-
-    if (profileMenu) profileMenu.style.display = 'flex';
-    if (guestAuth) guestAuth.style.display = 'none';
-
-    const userId = getCurrentUserId();
-    if (!userId) return;
-
-    try {
-        // fetchWithAuth는 이미 JSON 파싱된 data 필드를 반환
-        const user = await fetchWithAuth(`/users/${userId}`);
-
-        const profileImage = document.querySelector('[data-profile="image"]');
-        const profileNickname = document.querySelector('[data-profile="nickname"]');
-
-        if (profileImage) {
-            profileImage.src = user.profileImage || getProfilePlaceholder(userId);
-        }
-        if (profileNickname && user.nickname) {
-            profileNickname.textContent = user.nickname;
-        }
-    } catch (error) {
-        console.error('Failed to load user profile:', error);
-
-        // Network Error인 경우 사용자에게 알림
-        if (error.message === 'NETWORK-ERROR') {
-            Toast.warning('프로필 정보를 불러올 수 없습니다.', '네트워크 오류', 3000);
-        }
+    if (profileNickname && user.nickname) {
+      profileNickname.textContent = user.nickname;
     }
+  } catch (error) {
+    console.error('Failed to load user profile:', error);
+
+    // Network Error인 경우 사용자에게 알림
+    if (error.message === 'NETWORK-ERROR') {
+      Toast.warning('프로필 정보를 불러올 수 없습니다.', '네트워크 오류', 3000);
+    }
+  }
 }
 
 /**
@@ -59,21 +59,21 @@ async function initAuthHeader() {
  * @param {Event} e - 클릭 이벤트 객체
  */
 function handleProfileMenuClick(e) {
-    const logoutTarget = e.target.closest('[data-action="logout"]');
-    if (logoutTarget) {
-        e.preventDefault();
-        performLogout();
-        return;
-    }
+  const logoutTarget = e.target.closest('[data-action="logout"]');
+  if (logoutTarget) {
+    e.preventDefault();
+    performLogout();
+    return;
+  }
 
-    const profileLink = e.target.closest('[data-action="profile-link"], a.profile-menu__item');
-    if (profileLink && profileLink.tagName === 'A') {
-        e.preventDefault();
-        const href = profileLink.getAttribute('href');
-        if (href) {
-            window.location.href = href;
-        }
+  const profileLink = e.target.closest('[data-action="profile-link"], a.profile-menu__item');
+  if (profileLink && profileLink.tagName === 'A') {
+    e.preventDefault();
+    const href = profileLink.getAttribute('href');
+    if (href) {
+      window.location.href = href;
     }
+  }
 }
 
 /**
@@ -85,11 +85,11 @@ function handleProfileMenuClick(e) {
  * @returns {Promise<void>}
  */
 async function performLogout(redirectUrl = '/pages/user/login.html') {
-    try {
-        await logout();
-    } catch (error) {
-        console.error('Logout failed:', error);
-    } finally {
-        window.location.replace(redirectUrl);
-    }
+  try {
+    await logout();
+  } catch (error) {
+    console.error('Logout failed:', error);
+  } finally {
+    window.location.replace(redirectUrl);
+  }
 }

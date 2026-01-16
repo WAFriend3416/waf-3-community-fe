@@ -4,17 +4,17 @@
  * 참조: @docs/be/API.md Section 2.4
  */
 
-(function(window, document) {
+(function (window, document) {
   'use strict';
 
   const CONFIG = {
-    LIST_URL: '/board'
+    LIST_URL: '/board',
   };
 
   const state = {
     userId: null,
-    isSubmitting: false,  // 중복 제출 방지 플래그
-    hasChanges: false     // 변경사항 추적
+    isSubmitting: false, // 중복 제출 방지 플래그
+    hasChanges: false, // 변경사항 추적
   };
 
   const elements = {
@@ -29,7 +29,7 @@
     // Password toggle (비밀번호 표시/숨김)
     currentPasswordToggle: null,
     newPasswordToggle: null,
-    newPasswordConfirmToggle: null
+    newPasswordConfirmToggle: null,
   };
 
   function init() {
@@ -48,9 +48,9 @@
       state.userId = userId;
 
       cacheElements();
-      cleanupInlineStyles();  // 인라인 스타일 정리
+      cleanupInlineStyles(); // 인라인 스타일 정리
       bindEvents();
-      enableUnsavedChangesWarning(() => state.hasChanges);  // 브라우저 뒤로가기 처리
+      enableUnsavedChangesWarning(() => state.hasChanges); // 브라우저 뒤로가기 처리
     } catch (error) {
       console.error('Initialization failed:', error);
       Toast.warning('로그인이 필요합니다.', '인증 필요', 3000, () => {
@@ -70,9 +70,13 @@
     elements.saveButton = document.querySelector('[data-action="save"]');
 
     // Password toggle
-    elements.currentPasswordToggle = document.querySelector('[data-action="toggle-current-password"]');
+    elements.currentPasswordToggle = document.querySelector(
+      '[data-action="toggle-current-password"]'
+    );
     elements.newPasswordToggle = document.querySelector('[data-action="toggle-new-password"]');
-    elements.newPasswordConfirmToggle = document.querySelector('[data-action="toggle-new-password-confirm"]');
+    elements.newPasswordConfirmToggle = document.querySelector(
+      '[data-action="toggle-new-password-confirm"]'
+    );
   }
 
   /**
@@ -83,12 +87,12 @@
     const errorElements = [
       elements.currentPasswordError,
       elements.newPasswordError,
-      elements.newPasswordConfirmError
+      elements.newPasswordConfirmError,
     ];
-    errorElements.forEach(el => {
+    errorElements.forEach((el) => {
       if (el) {
-        el.style.display = '';  // 인라인 스타일 제거
-        el.textContent = '';     // 텍스트 초기화
+        el.style.display = ''; // 인라인 스타일 제거
+        el.textContent = ''; // 텍스트 초기화
       }
     });
   }
@@ -104,24 +108,34 @@
 
     // 실시간 검증 (blur 이벤트)
     if (elements.currentPasswordInput) {
-      elements.currentPasswordInput.addEventListener('blur', () => validateField('currentPassword'));
+      elements.currentPasswordInput.addEventListener('blur', () =>
+        validateField('currentPassword')
+      );
     }
     if (elements.newPasswordInput) {
       elements.newPasswordInput.addEventListener('blur', () => validateField('newPassword'));
     }
     if (elements.newPasswordConfirmInput) {
-      elements.newPasswordConfirmInput.addEventListener('blur', () => validateField('newPasswordConfirm'));
+      elements.newPasswordConfirmInput.addEventListener('blur', () =>
+        validateField('newPasswordConfirm')
+      );
     }
 
     // 비밀번호 토글 버튼
     if (elements.currentPasswordToggle) {
-      elements.currentPasswordToggle.addEventListener('click', () => togglePasswordVisibility('currentPassword'));
+      elements.currentPasswordToggle.addEventListener('click', () =>
+        togglePasswordVisibility('currentPassword')
+      );
     }
     if (elements.newPasswordToggle) {
-      elements.newPasswordToggle.addEventListener('click', () => togglePasswordVisibility('newPassword'));
+      elements.newPasswordToggle.addEventListener('click', () =>
+        togglePasswordVisibility('newPassword')
+      );
     }
     if (elements.newPasswordConfirmToggle) {
-      elements.newPasswordConfirmToggle.addEventListener('click', () => togglePasswordVisibility('newPasswordConfirm'));
+      elements.newPasswordConfirmToggle.addEventListener('click', () =>
+        togglePasswordVisibility('newPasswordConfirm')
+      );
     }
 
     // 입력 시 에러 메시지 제거 + 변경 감지
@@ -186,17 +200,22 @@
         method: 'PATCH',
         body: JSON.stringify({
           newPassword: newPassword,
-          newPasswordConfirm: newPasswordConfirm
-        })
+          newPasswordConfirm: newPasswordConfirm,
+        }),
       });
 
       // beforeunload 경고 비활성화
       disableUnsavedChangesWarning();
 
-      Toast.success('비밀번호가 변경되었습니다. 다시 로그인해주세요.', '변경 완료', 3000, async () => {
-        await logout();
-        window.location.href = '/page/login';
-      });
+      Toast.success(
+        '비밀번호가 변경되었습니다. 다시 로그인해주세요.',
+        '변경 완료',
+        3000,
+        async () => {
+          await logout();
+          window.location.href = '/page/login';
+        }
+      );
     } catch (error) {
       console.error('Failed to change password:', error);
 
@@ -212,7 +231,10 @@
         } else if (errorMessage.includes('USER-004')) {
           showNewPasswordError('비밀번호 정책을 만족하지 않습니다.');
         } else {
-          Toast.error(translateErrorCode(errorMessage) || '비밀번호 변경에 실패했습니다.', '변경 실패');
+          Toast.error(
+            translateErrorCode(errorMessage) || '비밀번호 변경에 실패했습니다.',
+            '변경 실패'
+          );
         }
       }
 
@@ -377,13 +399,13 @@
     if (!elements.newPasswordInput) return;
     const isPasswordVisible = elements.newPasswordInput.type === 'text';
 
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
       if (input) {
         input.type = isPasswordVisible ? 'password' : 'text';
       }
     });
 
-    buttons.forEach(button => {
+    buttons.forEach((button) => {
       if (button) {
         if (isPasswordVisible) {
           button.setAttribute('aria-label', '비밀번호 표시');
@@ -401,5 +423,4 @@
   } else {
     init();
   }
-
 })(window, document);

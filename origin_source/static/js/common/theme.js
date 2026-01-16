@@ -3,7 +3,7 @@
  * 다크/라이트 테마 전환 기능
  */
 
-const ThemeManager = (function() {
+const ThemeManager = (function () {
   const STORAGE_KEY = 'theme';
   const DARK = 'dark';
   const LIGHT = 'light';
@@ -70,7 +70,7 @@ const ThemeManager = (function() {
     applyTheme(theme);
 
     // 토글 버튼 이벤트 바인딩
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
       const toggleBtn = e.target.closest('[data-action="toggle-theme"]');
       if (toggleBtn) {
         e.preventDefault();
@@ -79,7 +79,7 @@ const ThemeManager = (function() {
     });
 
     // 시스템 preference 변경 감지
-    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function (e) {
       if (!localStorage.getItem(STORAGE_KEY)) {
         applyTheme(e.matches ? LIGHT : DARK);
       }
@@ -90,7 +90,7 @@ const ThemeManager = (function() {
     init: init,
     toggle: toggleTheme,
     apply: applyTheme,
-    get: getPreferredTheme
+    get: getPreferredTheme,
   };
 })();
 

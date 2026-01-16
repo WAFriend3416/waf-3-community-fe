@@ -4,16 +4,16 @@
  * 참조: @CLAUDE.md Section 4.2, @docs/be/API.md Section 3.2, 5, 6
  */
 
-(function(window, document) {
+(function (window, document) {
   'use strict';
 
   // ============================================
   // Configuration
   // ============================================
   const CONFIG = {
-    EDIT_POST_URL: '/board',  // /board/:id/edit로 리다이렉트됨
+    EDIT_POST_URL: '/board', // /board/:id/edit로 리다이렉트됨
     LIST_URL: '/board',
-    LOGIN_URL: '/page/login'
+    LOGIN_URL: '/page/login',
   };
 
   // ============================================
@@ -23,11 +23,11 @@
     postId: null,
     post: null,
     comments: [],
-    commentTotal: 0,              // 전체 댓글 수 (pagination.total_count)
+    commentTotal: 0, // 전체 댓글 수 (pagination.total_count)
     isLiked: false,
     currentUserId: null,
     editingCommentId: null,
-    isSubmittingComment: false    // 댓글 제출 중 플래그 (중복 방지)
+    isSubmittingComment: false, // 댓글 제출 중 플래그 (중복 방지)
   };
 
   // ============================================
@@ -62,7 +62,7 @@
     editPostButton: null,
     deletePostButton: null,
     profileDropdown: null,
-    profileImage: null
+    profileImage: null,
   };
 
   // ============================================
@@ -166,7 +166,7 @@
     // Modal actions
     if (elements.deleteModal) {
       const closeButtons = elements.deleteModal.querySelectorAll('[data-action="close-modal"]');
-      closeButtons.forEach(btn => {
+      closeButtons.forEach((btn) => {
         btn.addEventListener('click', closeDeleteModal);
       });
 
@@ -203,7 +203,7 @@
 
     await loadPost();
     await loadComments();
-    await initAuthHeader();  // 프로필 로드 (auth-header.js 공통 모듈)
+    await initAuthHeader(); // 프로필 로드 (auth-header.js 공통 모듈)
   }
 
   // ============================================
@@ -245,7 +245,7 @@
 
         // 좋아요 취소 API 호출
         await fetchWithAuth(`/posts/${state.postId}/like`, {
-          method: 'DELETE'
+          method: 'DELETE',
         });
       } else {
         // Optimistic Update: UI 즉시 업데이트
@@ -259,7 +259,7 @@
 
         // 좋아요 추가 API 호출
         await fetchWithAuth(`/posts/${state.postId}/like`, {
-          method: 'POST'
+          method: 'POST',
         });
       }
     } catch (error) {
@@ -295,19 +295,18 @@
 
           // 좋아요 취소 API 호출
           await fetchWithAuth(`/posts/${state.postId}/like`, {
-            method: 'DELETE'
+            method: 'DELETE',
           });
 
           // 취소 성공 → UI 업데이트 (조용히 처리)
           state.isLiked = false;
-          const newCount = originalCount;  // 이미 +1 했다가 롤백되었으므로 원래 개수 유지
+          const newCount = originalCount; // 이미 +1 했다가 롤백되었으므로 원래 개수 유지
           if (state.post && state.post.stats) {
             state.post.stats.likeCount = newCount;
           }
           updateLikeButton(false);
           updateLikeCount(newCount);
           return;
-
         } catch (unlikeError) {
           console.error('Failed to unlike after LIKE-001:', unlikeError);
           // 취소도 실패 → 원래 상태로 복원
@@ -336,7 +335,7 @@
 
   function handleEditPost(e) {
     e.preventDefault();
-    window.location.replace(`${CONFIG.EDIT_POST_URL}/${state.postId}/edit`);  // replace()로 히스토리 중복 방지
+    window.location.replace(`${CONFIG.EDIT_POST_URL}/${state.postId}/edit`); // replace()로 히스토리 중복 방지
   }
 
   function handleDeletePost(e) {
@@ -351,7 +350,7 @@
     // 문제 2: 댓글 폼 다중 제출 방지
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     if (state.isSubmittingComment) {
-      return;  // 이미 제출 중이면 무시
+      return; // 이미 제출 중이면 무시
     }
 
     // 로그인 확인
@@ -364,9 +363,7 @@
 
     // 클라이언트 검증 (validation.js 활용)
     if (!isValidComment(content)) {
-      const errorMsg = !content
-        ? '댓글 내용을 입력해주세요.'
-        : '댓글은 200자 이하로 입력해주세요.';
+      const errorMsg = !content ? '댓글 내용을 입력해주세요.' : '댓글은 200자 이하로 입력해주세요.';
       Toast.error(errorMsg, '입력 오류');
       return;
     }
@@ -382,10 +379,13 @@
     try {
       if (state.editingCommentId) {
         // 댓글 수정
-        const updatedComment = await fetchWithAuth(`/posts/${state.postId}/comments/${state.editingCommentId}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ comment: content })
-        });
+        const updatedComment = await fetchWithAuth(
+          `/posts/${state.postId}/comments/${state.editingCommentId}`,
+          {
+            method: 'PATCH',
+            body: JSON.stringify({ comment: content }),
+          }
+        );
 
         // UI 업데이트
         updateCommentInList(updatedComment);
@@ -394,7 +394,7 @@
         // 댓글 작성
         const newComment = await fetchWithAuth(`/posts/${state.postId}/comments`, {
           method: 'POST',
-          body: JSON.stringify({ comment: content })
+          body: JSON.stringify({ comment: content }),
         });
 
         // UI 업데이트
@@ -405,9 +405,8 @@
       // 폼 초기화 (작성 모드만)
       if (!state.editingCommentId) {
         elements.commentTextarea.value = '';
-        updateCommentCounter();  // 글자수 카운터 리셋
+        updateCommentCounter(); // 글자수 카운터 리셋
       }
-
     } catch (error) {
       console.error('Failed to submit comment:', error);
 
@@ -464,7 +463,7 @@
     if (!commentItem) return;
 
     const commentId = commentItem.dataset.commentId;
-    const comment = state.comments.find(c => c.commentId === parseInt(commentId));
+    const comment = state.comments.find((c) => c.commentId === parseInt(commentId));
 
     if (!comment) return;
 
@@ -495,11 +494,7 @@
   async function handleDeleteComment(e, button) {
     e.preventDefault();
 
-    const confirmed = await confirmModal(
-      '댓글 삭제',
-      '정말 삭제하시겠습니까?',
-      { isDanger: true }
-    );
+    const confirmed = await confirmModal('댓글 삭제', '정말 삭제하시겠습니까?', { isDanger: true });
     if (!confirmed) return;
 
     const commentItem = button.closest('[data-comment-id]');
@@ -516,13 +511,12 @@
       }
 
       await fetchWithAuth(`/posts/${state.postId}/comments/${commentId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       });
 
       // UI 업데이트
       removeCommentFromList(commentId);
       updateCommentCount(state.commentTotal);
-
     } catch (error) {
       console.error('Failed to delete comment:', error);
 
@@ -571,7 +565,10 @@
       counterElement.classList.add('comment-form__counter--warning');
       counterElement.classList.remove('comment-form__counter--error');
     } else {
-      counterElement.classList.remove('comment-form__counter--warning', 'comment-form__counter--error');
+      counterElement.classList.remove(
+        'comment-form__counter--warning',
+        'comment-form__counter--error'
+      );
     }
   }
 
@@ -637,7 +634,6 @@
           elements.likeButton.style.display = 'none';
         }
       }
-
     } catch (error) {
       console.error('Failed to load post:', error);
       Toast.error('게시글을 찾을 수 없습니다.', '오류', 2000, () => {
@@ -671,11 +667,10 @@
       if (state.comments.length === 0) {
         showEmptyComments();
       } else {
-        state.comments.forEach(comment => {
+        state.comments.forEach((comment) => {
           renderComment(comment);
         });
       }
-
     } catch (error) {
       console.error('Failed to load comments:', error);
 
@@ -699,14 +694,13 @@
   async function confirmDeletePost() {
     try {
       await fetchWithAuth(`/posts/${state.postId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
       });
 
       closeDeleteModal();
       Toast.success('게시글이 삭제되었습니다.', '삭제 완료', 2000, () => {
         window.location.replace(CONFIG.LIST_URL);
       });
-
     } catch (error) {
       console.error('Failed to delete post:', error);
 
@@ -840,12 +834,14 @@
 
     // 본인 댓글이면 수정/삭제 버튼 표시
     const isOwner = state.currentUserId && author.userId === state.currentUserId;
-    const actionsHtml = isOwner ? `
+    const actionsHtml = isOwner
+      ? `
       <div class="comment-item__actions" data-author-actions>
         <button class="comment-item__action" data-action="edit-comment">수정</button>
         <button class="comment-item__action comment-item__action--delete" data-action="delete-comment">삭제</button>
       </div>
-    ` : '';
+    `
+      : '';
 
     div.innerHTML = `
       <div class="comment-item__header">
@@ -918,7 +914,7 @@
   }
 
   function updateCommentInList(updatedComment) {
-    const index = state.comments.findIndex(c => c.commentId === updatedComment.commentId);
+    const index = state.comments.findIndex((c) => c.commentId === updatedComment.commentId);
     if (index !== -1) {
       state.comments[index] = updatedComment;
     }
@@ -934,7 +930,7 @@
   }
 
   function removeCommentFromList(commentId) {
-    const index = state.comments.findIndex(c => c.commentId === parseInt(commentId));
+    const index = state.comments.findIndex((c) => c.commentId === parseInt(commentId));
     if (index !== -1) {
       state.comments.splice(index, 1);
     }
@@ -1001,5 +997,4 @@
   } else {
     init();
   }
-
 })(window, document);

@@ -4,14 +4,14 @@
  * 참조: @docs/be/API.md Section 2.2, 2.3, 2.5
  */
 
-(function(window, document) {
+(function (window, document) {
   'use strict';
 
   const CONFIG = {
     MAX_NICKNAME_LENGTH: 10,
     MAX_FILE_SIZE: 5 * 1024 * 1024,
     ALLOWED_FILE_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
-    LIST_URL: '/board'
+    LIST_URL: '/board',
   };
 
   // API_BASE_URL은 server.js에서 window.APP_CONFIG로 주입됨
@@ -20,13 +20,14 @@
   const state = {
     userId: null,
     selectedFile: null,
-    removeExistingImage: false,  // 이미지 제거 플래그
-    isSubmitting: false,  // 중복 제출 방지 플래그
-    hasChanges: false,    // 변경사항 추적
-    initialData: {        // 초기 데이터 저장
+    removeExistingImage: false, // 이미지 제거 플래그
+    isSubmitting: false, // 중복 제출 방지 플래그
+    hasChanges: false, // 변경사항 추적
+    initialData: {
+      // 초기 데이터 저장
       nickname: '',
-      profileImageSrc: ''
-    }
+      profileImageSrc: '',
+    },
   };
 
   const elements = {
@@ -37,7 +38,7 @@
     nicknameInput: null,
     nicknameError: null,
     saveButton: null,
-    withdrawButton: null
+    withdrawButton: null,
   };
 
   function init() {
@@ -56,9 +57,9 @@
       state.userId = userId;
 
       cacheElements();
-      cleanupInlineStyles();  // 인라인 스타일 정리
+      cleanupInlineStyles(); // 인라인 스타일 정리
       bindEvents();
-      enableUnsavedChangesWarning(() => state.hasChanges);  // 브라우저 뒤로가기 처리
+      enableUnsavedChangesWarning(() => state.hasChanges); // 브라우저 뒤로가기 처리
       loadUserData();
     } catch (error) {
       console.error('Initialization failed:', error);
@@ -85,8 +86,8 @@
    */
   function cleanupInlineStyles() {
     if (elements.nicknameError) {
-      elements.nicknameError.style.display = '';  // 인라인 스타일 제거
-      elements.nicknameError.textContent = '';     // 텍스트 초기화
+      elements.nicknameError.style.display = ''; // 인라인 스타일 제거
+      elements.nicknameError.textContent = ''; // 텍스트 초기화
     }
   }
 
@@ -117,7 +118,7 @@
     if (elements.nicknameInput) {
       elements.nicknameInput.addEventListener('input', () => {
         clearNicknameError();
-        checkForChanges();  // 변경 감지
+        checkForChanges(); // 변경 감지
       });
     }
   }
@@ -128,12 +129,12 @@
 
       if (elements.nicknameInput && user.nickname) {
         elements.nicknameInput.value = user.nickname;
-        state.initialData.nickname = user.nickname;  // 초기 값 저장
+        state.initialData.nickname = user.nickname; // 초기 값 저장
       }
       if (elements.profileImage && user.profileImage) {
         elements.profileImage.src = user.profileImage;
         elements.profileImage.style.display = 'block';
-        state.initialData.profileImageSrc = user.profileImage;  // 초기 값 저장
+        state.initialData.profileImageSrc = user.profileImage; // 초기 값 저장
         // 이미지가 있으면 제거 버튼 표시
         if (elements.removeImageButton) {
           elements.removeImageButton.style.display = 'block';
@@ -231,15 +232,14 @@
       try {
         response = await fetchWithAuth(`/users/${state.userId}`, {
           method: 'PATCH',
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(requestBody),
         });
 
         // fetchWithAuth는 성공 시 data.data 반환, 204는 { success: true }
-        disableUnsavedChangesWarning();  // beforeunload 경고 비활성화
+        disableUnsavedChangesWarning(); // beforeunload 경고 비활성화
         Toast.success('프로필이 수정되었습니다.', '수정 완료', 3000, () => {
           window.location.reload();
         });
-
       } catch (error) {
         // fetchWithAuth 내부에서 401 처리 실패 시 여기로 옴
         if (error.message === 'Authentication failed') {
@@ -251,7 +251,6 @@
         }
         throw error;
       }
-
     } catch (error) {
       console.error('[Profile Edit] Failed to update profile:', error);
 
@@ -307,11 +306,11 @@
     }
 
     state.selectedFile = file;
-    state.removeExistingImage = false;  // 새 이미지 선택 시 제거 플래그 해제
-    checkForChanges();  // 변경 감지
+    state.removeExistingImage = false; // 새 이미지 선택 시 제거 플래그 해제
+    checkForChanges(); // 변경 감지
 
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = (e) => {
       elements.profileImage.src = e.target.result;
       elements.profileImage.style.display = 'block';
       if (elements.removeImageButton) {
@@ -333,7 +332,7 @@
     }
     elements.profileImageInput.value = '';
 
-    checkForChanges();  // 변경 감지
+    checkForChanges(); // 변경 감지
   }
 
   async function handleGoBack() {
@@ -372,11 +371,11 @@
         url: `/users/${state.userId}`,
         userId: state.userId,
         hasAccessToken: !!getAccessToken(),
-        method: 'PUT'
+        method: 'PUT',
       });
 
       await fetchWithAuth(`/users/${state.userId}`, {
-        method: 'PUT'
+        method: 'PUT',
       });
 
       Toast.success('회원탈퇴가 완료되었습니다.', '탈퇴 완료', 3000, () => {
@@ -402,5 +401,4 @@
   } else {
     init();
   }
-
 })(window, document);

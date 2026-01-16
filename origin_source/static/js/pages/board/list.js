@@ -4,7 +4,7 @@
  * 참조: @CLAUDE.md Section 4.1, @docs/be/API.md Section 3.1
  */
 
-(function(window, document) {
+(function (window, document) {
   'use strict';
 
   // ============================================
@@ -14,7 +14,7 @@
     PAGE_SIZE: 20,
     WRITE_POST_URL: '/board/write',
     POST_DETAIL_URL: '/board',
-    LOGIN_URL: '/page/login'
+    LOGIN_URL: '/page/login',
   };
 
   // ============================================
@@ -24,8 +24,8 @@
     currentCursor: null, // Cursor 페이지네이션
     hasMore: true,
     isLoading: false,
-    retryCount: 0,       // 재시도 카운터
-    maxRetries: 5        // 최대 5회 재시도
+    retryCount: 0, // 재시도 카운터
+    maxRetries: 5, // 최대 5회 재시도
   };
 
   // ============================================
@@ -39,7 +39,7 @@
     loadMoreButton: null,
     loadMoreContainer: null,
     profileImage: null,
-    profileDropdown: null
+    profileDropdown: null,
   };
 
   // ============================================
@@ -183,7 +183,7 @@
       // API 호출 (cursor 방식)
       const params = new URLSearchParams({
         limit: CONFIG.PAGE_SIZE,
-        sort: 'latest'
+        sort: 'latest',
       });
 
       if (state.currentCursor) {
@@ -194,10 +194,9 @@
 
       // 응답 구조: { posts: [...], nextCursor: 100, hasMore: true }
       handlePostsLoaded(result);
-      state.retryCount = 0;  // 성공 시 카운터 리셋
+      state.retryCount = 0; // 성공 시 카운터 리셋
       setLoading(false);
       removeSkeletonCards();
-
     } catch (error) {
       console.error('Failed to load posts:', error);
 
@@ -212,7 +211,9 @@
       } else {
         // 재시도 가능 - 2초 후 자동 재시도
         // isLoading = true를 유지하여 재시도 중 중복 요청 방지
-        showError(`게시글을 불러오는데 실패했습니다. (시도 ${state.retryCount}/${state.maxRetries})`);
+        showError(
+          `게시글을 불러오는데 실패했습니다. (시도 ${state.retryCount}/${state.maxRetries})`
+        );
 
         setTimeout(() => {
           // 재시도: isLoading이 여전히 true이므로 중복 요청 방지됨
@@ -237,7 +238,7 @@
     }
 
     // 게시글 렌더링
-    posts.forEach(post => {
+    posts.forEach((post) => {
       renderPost(post);
     });
 
@@ -286,11 +287,13 @@
     const formattedDate = formatDate(post.createdAt);
 
     // 이미지 HTML (있는 경우)
-    const imageHtml = post.imageUrl ? `
+    const imageHtml = post.imageUrl
+      ? `
       <div class="post-card__image-wrapper">
         <img src="${escapeHtml(post.imageUrl)}" alt="게시글 이미지" class="post-card__image" loading="lazy" onerror="this.style.display='none';">
       </div>
-    ` : '';
+    `
+      : '';
 
     article.innerHTML = `
       <div class="post-card__header">
@@ -370,7 +373,7 @@
     if (!elements.postList) return;
 
     const skeletons = elements.postList.querySelectorAll('[data-skeleton="true"]');
-    skeletons.forEach(skeleton => skeleton.remove());
+    skeletons.forEach((skeleton) => skeleton.remove());
   }
 
   function showRetryButton() {
@@ -380,8 +383,8 @@
     if (retryContainer) retryContainer.style.display = 'block';
     if (retryButton) {
       retryButton.onclick = () => {
-        state.retryCount = 0;  // 카운터 리셋
-        state.hasMore = true;  // 상태 복구
+        state.retryCount = 0; // 카운터 리셋
+        state.hasMore = true; // 상태 복구
         if (retryContainer) retryContainer.style.display = 'none';
         loadPosts();
       };
@@ -433,7 +436,7 @@
   function handleScrollToTop() {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      behavior: 'smooth',
     });
   }
 
@@ -471,5 +474,4 @@
   } else {
     init();
   }
-
 })(window, document);
